@@ -2,10 +2,7 @@ module github.com/threefoldtech/tf-pinning-service
 
 go 1.19
 
-require (
-	github.com/gin-gonic/gin v1.8.1
-	github.com/threefoldtech/tf-pinning-service/go v0.0.0-20220914215527-38ba785389dd
-)
+require github.com/gin-gonic/gin v1.8.1
 
 require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
