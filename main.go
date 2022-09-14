@@ -15,7 +15,7 @@ import (
 	//
 	//sw "github.com/GIT_USER_ID/GIT_REPO_ID/go"
 	//
-	sw "./go"
+	sw "github.com/threefoldtech/tf-pinning-service/tree/development-ipfs_pinning_server_stub/go"
 )
 
 func main() {
