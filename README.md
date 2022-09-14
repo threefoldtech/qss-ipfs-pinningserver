@@ -70,6 +70,7 @@
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <li><a href="#api-specs">API Specs</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -126,6 +127,15 @@ see [here](./go/README.md#overview)
 ## Usage
 
 TODO
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
+
+
+<!-- API SPECS -->
+## API Specs
+
+see [here](./go/README.md)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
