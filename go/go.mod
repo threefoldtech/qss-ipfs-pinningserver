@@ -1,4 +1,4 @@
-module github.com/threefoldtech/tf-pinning-service/tree/development-ipfs_pinning_server_stub/go
+module github.com/threefoldtech/tf-pinning-service/go
 
 go 1.19
 
