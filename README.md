@@ -117,7 +117,7 @@ TODO
 
 ### Installation
 
-see [here](./go/README.md#overview)
+see [here](./core/README.md#overview)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -135,7 +135,7 @@ TODO
 <!-- API SPECS -->
 ## API Specs
 
-see [here](./go/README.md)
+see [here](./core/README.md)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
