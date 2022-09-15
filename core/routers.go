@@ -58,35 +58,35 @@ var routes = Routes{
 	{
 		"AddPin",
 		http.MethodPost,
-		"/pins",
+		"/api/v1/pins",
 		AddPin,
 	},
 
 	{
 		"DeletePinByRequestId",
 		http.MethodDelete,
-		"/pins/:requestid",
+		"/api/v1/pins/:requestid",
 		DeletePinByRequestId,
 	},
 
 	{
 		"GetPinByRequestId",
 		http.MethodGet,
-		"/pins/:requestid",
+		"/api/v1/pins/:requestid",
 		GetPinByRequestId,
 	},
 
 	{
 		"GetPins",
 		http.MethodGet,
-		"/pins",
+		"/api/v1/pins",
 		GetPins,
 	},
 
 	{
 		"ReplacePinByRequestId",
 		http.MethodPost,
-		"/pins/:requestid",
+		"/api/v1/pins/:requestid",
 		ReplacePinByRequestId,
 	},
 }
