@@ -1,5 +1,4 @@
-package tfpin
+package models
 
 // PinMeta - Optional metadata for pin object
-type PinMeta struct {
-}
+type PinMeta map[string]string

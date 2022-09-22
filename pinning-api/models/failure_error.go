@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 type FailureError struct {
 

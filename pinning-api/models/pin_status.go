@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 import (
 	"time"

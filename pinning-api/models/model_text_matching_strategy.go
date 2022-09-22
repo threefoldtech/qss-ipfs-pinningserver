@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 // TextMatchingStrategy : Alternative text matching strategy
 type TextMatchingStrategy string

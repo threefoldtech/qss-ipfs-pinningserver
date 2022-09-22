@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 // Failure - Response for a failed request
 type Failure struct {

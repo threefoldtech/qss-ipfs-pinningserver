@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 // Status : Status a pin object can have at a pinning service
 type Status string

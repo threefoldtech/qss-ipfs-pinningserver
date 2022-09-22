@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 // PinResults - Response used for listing pin objects matching request
 type PinResults struct {

@@ -1,4 +1,4 @@
-package tfpin
+package models
 
 // Pin - Pin object
 type Pin struct {

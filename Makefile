@@ -7,7 +7,7 @@ build:
 run:
 	./${BINARY_NAME}
 
-build_and_run: build run
+build_run: build run
 
 clean:
 	$(GO_BINARY) clean
