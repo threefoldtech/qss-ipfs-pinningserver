@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/threefoldtech/tf-pinning-service/pinning-api/middleware"
 )
 
 // Route is the information for every URI.
@@ -25,6 +26,7 @@ type Routes []Route
 func NewRouter() *gin.Engine {
 	router := gin.Default()
 	v1 := router.Group("/api/v1")
+	v1.Use(middleware.ApiKeyMiddleware())
 
 	for _, route := range routes {
 		switch route.Method {

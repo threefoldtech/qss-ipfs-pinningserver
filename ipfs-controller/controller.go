@@ -3,11 +3,11 @@ package ipfsController
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/ipfs-cluster/ipfs-cluster/api"
 	"github.com/ipfs-cluster/ipfs-cluster/api/rest/client"
+	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
@@ -26,7 +26,7 @@ type clusterController struct {
 }
 
 func NewClusterController() (ipfsController, error) {
-	client, err := client.NewDefaultClient(&client.Config{Host: os.Getenv("CLUSTER_HOSTNAME"), Port: os.Getenv("CLUSTER_PORT")})
+	client, err := client.NewDefaultClient(&client.Config{Host: config.CFG.Cluster.Host, Port: config.CFG.Cluster.Port})
 
 	if err != nil {
 		return nil, &ControllerError{

@@ -19,12 +19,17 @@ import (
 // AddPin - Add pin object
 func AddPin(c *gin.Context) {
 	var pin models.Pin
+	// c.Get("userID")
+
 	if err := c.ShouldBindJSON(&pin); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, models.FailureError{
+			Reason:  "BAD_REQUEST",
+			Details: err.Error(),
+		})
 		return
 	}
 
-	pinsRepo := database.New()
+	pinsRepo := database.NewPinsRepository()
 	cl, err := ipfsController.NewClusterController()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.FailureError{
@@ -45,7 +50,7 @@ func AddPin(c *gin.Context) {
 		Delegates: delegates,
 	}
 
-	err = pinsRepo.Insert(c, pinStatus)
+	pinStatus, err = pinsRepo.InsertOrGet(c, pinStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.FailureError{
 			Reason:  "INTERNAL_SERVER_ERROR",
@@ -115,7 +120,7 @@ func DeletePinByRequestId(c *gin.Context) {
 		})
 		return
 	}
-	pinsRepo := database.New()
+	pinsRepo := database.NewPinsRepository()
 	pin_status, err := pinsRepo.FindByID(c, req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.FailureError{
@@ -125,7 +130,7 @@ func DeletePinByRequestId(c *gin.Context) {
 		return
 	}
 	cid := pin_status.Pin.Cid
-	pin_results, err := pinsRepo.Find(c, []string{cid}, []string{}, "", time.Time{}, time.Time{}, "", 2)
+	// pin_results, err := pinsRepo.Find(c, []string{cid}, []string{}, "", time.Time{}, time.Time{}, "", 2)
 	err = pinsRepo.Delete(c, req_id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.FailureError{
@@ -134,7 +139,7 @@ func DeletePinByRequestId(c *gin.Context) {
 		})
 		return
 	}
-	if pin_results.Count == 1 {
+	if pinsRepo.CIDRefrenceCount(c, cid) == 0 {
 		cl, err := ipfsController.NewClusterController()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.FailureError{
@@ -161,7 +166,7 @@ func GetPinByRequestId(c *gin.Context) {
 		return
 	}
 
-	pinsRepo := database.New()
+	pinsRepo := database.NewPinsRepository()
 	pin_status, err := pinsRepo.FindByID(c, req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.FailureError{
@@ -194,7 +199,7 @@ func GetPins(c *gin.Context) {
 	if err != nil {
 		limit_int = 10
 	}
-	pinsRepo := database.New()
+	pinsRepo := database.NewPinsRepository()
 	pin_results, err := pinsRepo.Find(c, cids, statuses, name, time.Time{}, time.Time{}, match, limit_int)
 	c.JSON(http.StatusOK, pin_results)
 }
