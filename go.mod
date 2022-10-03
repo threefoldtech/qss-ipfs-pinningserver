@@ -8,6 +8,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/ipfs-cluster/ipfs-cluster v1.0.3
 	github.com/ipfs/go-ipfs-api v0.3.0
+	github.com/sirupsen/logrus v1.8.1
 	gorm.io/driver/sqlite v1.3.6
 	gorm.io/gorm v1.23.8
 )

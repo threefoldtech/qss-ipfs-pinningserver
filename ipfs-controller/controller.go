@@ -159,6 +159,12 @@ func (c *clusterController) Status(ctx context.Context, cid string) (models.Stat
 		}
 	}
 	pinInfo, err := c.Client.Status(ctx, cid_decoded, false)
+	if err != nil {
+		return models.FAILED, &ControllerError{
+			Type: CONNECTION_ERROR,
+			Err:  err,
+		}
+	}
 	if pinInfo.Match(api.TrackerStatusPinning) {
 		return models.PINNING, nil
 	} else if pinInfo.Match(api.TrackerStatusQueued) {
@@ -181,7 +187,10 @@ func (c *clusterController) IsPinned(ctx context.Context, cid string) (bool, err
 func (c *clusterController) DagSize(ctx context.Context, cid string) (*shell.ObjectStats, error) {
 	r, err := c.Client.IPFS(ctx).ObjectStat(cid)
 	if err != nil {
-		return nil, err
+		return nil, &ControllerError{
+			Type: CONNECTION_ERROR,
+			Err:  err,
+		}
 	}
 	return r, nil
 }

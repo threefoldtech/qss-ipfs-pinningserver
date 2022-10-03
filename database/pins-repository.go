@@ -31,7 +31,7 @@ func (r *pins) InsertOrGet(ctx context.Context, user_id uint, pinStatus models.P
 	// pin_test := PinDTO{}
 	//tx := r.db.Where(PinDTO{UserID: pin.UserID, Cid: pin.Cid}).First(&pin_test)
 
-	r.db.Debug().Where("user_id = ? AND cid = ?", pin.UserID, pin.Cid).Attrs(PinDTO{UUID: uuid}).FirstOrCreate(&pin)
+	r.db.Where("user_id = ? AND cid = ?", pin.UserID, pin.Cid).Attrs(PinDTO{UUID: uuid}).FirstOrCreate(&pin)
 
 	return pin.ToEntity(), nil
 }

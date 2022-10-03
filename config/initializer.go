@@ -3,6 +3,8 @@ package config
 import (
 	"os"
 	"strconv"
+
+	"github.com/threefoldtech/tf-pinning-service/logger"
 )
 
 var CFG Config
@@ -81,4 +83,8 @@ func LoadConfig() {
 		Server:  sc,
 		Auth:    ac,
 	}
+	log := logger.GetDefaultLogger()
+	log.WithFields(logger.Fields{
+		"topic": "Config",
+	}).Info("Configurations have been successfully loaded")
 }

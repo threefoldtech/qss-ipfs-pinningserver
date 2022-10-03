@@ -100,6 +100,7 @@ func AddPin(c *gin.Context) {
 		pinStatus.Status = models.PINNED
 		pinsRepo.Patch(c, getUserIdFromContext(c), request_id, map[string]interface{}{"status": db.PINNED})
 	}
+	// fmt.Println(cl.DagSize(c, pin.Cid))
 	c.JSON(http.StatusAccepted, pinStatus)
 }
 
