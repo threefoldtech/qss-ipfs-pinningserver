@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 )
 
 var CFG Config
@@ -20,7 +21,8 @@ type serverConfig struct {
 }
 
 type dbConfig struct {
-	DSN string // ex. "pins.db" for sqlite
+	DSN      string // ex. "pins.db" for sqlite
+	LogLevel int    // could be 1 to 4, meaning Silent, Error, Warn, Info
 }
 
 type Config struct {
@@ -43,6 +45,10 @@ func LoadConfig() {
 	if !ok {
 		panic("`TFPIN_DB_DSN` Not present in the environment!\nPlease make sure to set all required environment variables.")
 	}
+	database_log_level, ok := os.LookupEnv("TFPIN_DB_LOG_LEVEL")
+	if !ok {
+		database_log_level = "1"
+	}
 	server_addr, ok := os.LookupEnv("TFPIN_SERVER_ADDR")
 	if !ok {
 		panic("`TFPIN_SERVER_ADDR` Not present in the environment!\nPlease make sure to set all required environment variables.")
@@ -55,8 +61,13 @@ func LoadConfig() {
 		Host: cluster_host,
 		Port: cluster_port,
 	}
+	database_ll_int, err := strconv.Atoi(database_log_level)
+	if err != nil || database_ll_int < 0 || database_ll_int > 4 {
+		panic("`TFPIN_DB_LOG_LEVEL` set to invalid value!")
+	}
 	dbc := dbConfig{
-		DSN: database_dsn,
+		DSN:      database_dsn,
+		LogLevel: database_ll_int,
 	}
 	sc := serverConfig{
 		Addr: server_addr,

@@ -1,22 +1,25 @@
 package database
 
 import (
+	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
 // Pins represents an interface to the Pins database
 type PinsRepository interface {
+	Lock()
+	Unlock()
 	// Set adds or updates a Pin
-	InsertOrGet(ctx *gin.Context, pinStatus models.PinStatus) (models.PinStatus, error)
+	InsertOrGet(ctx context.Context, userID uint, pinStatus models.PinStatus) (models.PinStatus, error)
 	// Patch patches the fields of a Pin according to the given ID
-	Patch(ctx *gin.Context, id string, fields map[string]interface{}) error
+	Patch(ctx context.Context, userID uint, id string, fields map[string]interface{}) error
 	// Get returns the Pin status for a given ID
-	FindByID(ctx *gin.Context, id string) (models.PinStatus, error)
+	FindByID(ctx context.Context, userID uint, id string) (models.PinStatus, error)
 	// Find returns a list of Pins for the given parameters
-	Find(ctx *gin.Context,
+	Find(ctx context.Context,
+		userID uint,
 		cids, statuses []string,
 		name string,
 		before, after time.Time,
@@ -24,6 +27,7 @@ type PinsRepository interface {
 		limit int,
 	) (models.PinResults, error)
 	// Delete removes the Pin according to the given ID
-	Delete(ctx *gin.Context, id string) error
-	CIDRefrenceCount(ctx *gin.Context, cid string) int64
+	Delete(ctx context.Context, userID uint, id string) error
+	CIDRefrenceCount(ctx context.Context, cid string) int64
+	FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error)
 }

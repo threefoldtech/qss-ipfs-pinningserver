@@ -1,17 +1,18 @@
 package database
 
 import (
+	"context"
 	"errors"
-	"fmt"
+	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 	"gorm.io/gorm"
 )
 
 type pins struct {
 	db *gorm.DB
+	sync.Mutex
 }
 
 func NewPinsRepository() PinsRepository {
@@ -20,11 +21,11 @@ func NewPinsRepository() PinsRepository {
 	}
 }
 
-func (r *pins) InsertOrGet(ctx *gin.Context, pinStatus models.PinStatus) (models.PinStatus, error) {
+func (r *pins) InsertOrGet(ctx context.Context, user_id uint, pinStatus models.PinStatus) (models.PinStatus, error) {
 	pin := PinDTO{}
 	pin.FromEntity(pinStatus)
 	// get user from context
-	pin.UserID = ctx.GetUint("userID")
+	pin.UserID = user_id
 	uuid := pin.UUID
 	pin.UUID = ""
 	// pin_test := PinDTO{}
@@ -32,21 +33,18 @@ func (r *pins) InsertOrGet(ctx *gin.Context, pinStatus models.PinStatus) (models
 
 	r.db.Debug().Where("user_id = ? AND cid = ?", pin.UserID, pin.Cid).Attrs(PinDTO{UUID: uuid}).FirstOrCreate(&pin)
 
-	fmt.Print("new: ", pinStatus.Requestid, "old: ", pin.UUID)
 	return pin.ToEntity(), nil
 }
 
-func (r *pins) Patch(ctx *gin.Context, id string, fields map[string]interface{}) error {
-	user_id := ctx.GetUint("userID")
-	tx := r.db.Model(&PinDTO{}).Where("uuid = ? AND user_id = ?", id, user_id).Updates(fields)
+func (r *pins) Patch(ctx context.Context, user_id uint, id string, fields map[string]interface{}) error {
+	tx := r.db.Debug().Model(&PinDTO{}).Where("uuid = ? AND user_id = ?", id, user_id).Updates(fields)
 	if tx.Error != nil {
 		return tx.Error
 	}
 	return nil
 }
 
-func (r *pins) FindByID(ctx *gin.Context, id string) (models.PinStatus, error) {
-	user_id := ctx.GetUint("userID")
+func (r *pins) FindByID(ctx context.Context, user_id uint, id string) (models.PinStatus, error) {
 	var pin PinDTO
 	tx := r.db.First(&pin, "uuid = ? AND user_id = ?", id, user_id)
 	if tx.RowsAffected == 0 {
@@ -56,14 +54,14 @@ func (r *pins) FindByID(ctx *gin.Context, id string) (models.PinStatus, error) {
 }
 
 func (r *pins) Find(
-	ctx *gin.Context,
+	ctx context.Context,
+	user_id uint,
 	cids, statuses []string,
 	name string,
 	before, after time.Time,
 	match string,
 	limit int,
 ) (models.PinResults, error) {
-	user_id := ctx.GetUint("userID")
 	var pins []PinDTO
 
 	queryDB := r.db
@@ -78,8 +76,10 @@ func (r *pins) Find(
 		// status_list := strings.Split(status, ",")
 		queryDB = queryDB.Where("status IN ?", statuses)
 	}
+	if user_id != 0 {
+		queryDB = queryDB.Where("user_id = ?", user_id)
+	}
 	// TODO: before, after
-	queryDB = queryDB.Where("user_id = ?", user_id)
 	queryDB = queryDB.Limit(limit)
 	tx := queryDB.Find(&pins)
 	count := tx.RowsAffected
@@ -95,9 +95,7 @@ func (r *pins) Find(
 	return models.PinResults{Count: int32(count), Results: filterd_pins}, nil // TODO: check type PinResults.Count
 }
 
-func (r *pins) Delete(ctx *gin.Context, id string) error {
-	user_id := ctx.GetUint("userID")
-
+func (r *pins) Delete(ctx context.Context, user_id uint, id string) error {
 	tx := r.db.Where("uuid = ? AND user_id = ?", id, user_id).Delete(&PinDTO{})
 	if tx.Error != nil {
 		return tx.Error
@@ -105,9 +103,25 @@ func (r *pins) Delete(ctx *gin.Context, id string) error {
 	return nil
 }
 
-func (r *pins) CIDRefrenceCount(ctx *gin.Context, cid string) int64 {
+func (r *pins) CIDRefrenceCount(ctx context.Context, cid string) int64 {
 	var count int64
-	r.db.Model(&PinDTO{}).Where("cid =", cid).Count(&count)
+	r.db.Model(&PinDTO{}).Where("cid = ?", cid).Count(&count)
 	return count
 
+}
+
+func (r *pins) FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error) {
+	var pins []PinDTO
+
+	queryDB := r.db
+
+	if len(statuses) != 0 {
+		queryDB = queryDB.Where("status IN ?", statuses)
+	}
+
+	tx := queryDB.Find(&pins)
+	if tx.Error != nil {
+		return []PinDTO{}, tx.Error
+	}
+	return pins, nil
 }

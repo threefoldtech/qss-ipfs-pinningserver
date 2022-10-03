@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ipfs-cluster/ipfs-cluster/api"
+	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
@@ -16,4 +17,5 @@ type ipfsController interface {
 	WaitForPinned(ctx context.Context, cid string) error
 	IsPinned(ctx context.Context, cid string) (bool, error)
 	Status(ctx context.Context, cid string) (models.Status, error)
+	DagSize(ctx context.Context, key string) (*shell.ObjectStats, error)
 }

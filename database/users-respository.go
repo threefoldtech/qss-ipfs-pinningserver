@@ -45,9 +45,11 @@ func (u *users) FindByID(ctx context.Context, id string) (User, error) {
 	}
 	return user, nil
 }
-func (u *users) FindByTokenHash(ctx context.Context, hash string) (User, error) {
+func (u *users) FindByToken(ctx context.Context, access_token string) (User, error) {
 	var user User
-	tx := u.db.First(&user, "access_token = ?", hash)
+	hash := sha256.Sum256([]byte(access_token))
+	hex_string := hex.EncodeToString(hash[:])
+	tx := u.db.First(&user, "access_token = ?", hex_string)
 	if tx.RowsAffected == 0 {
 		return User{}, errors.New("AccessToken not exists")
 	}

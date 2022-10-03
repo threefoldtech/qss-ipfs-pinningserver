@@ -1,8 +1,6 @@
 package middleware
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -51,9 +49,7 @@ func apiKeyIsValid(c *gin.Context, rawKey string) (uint, bool) {
 	// TODO: use tf-pinning-service/auth package. not implemented yet.
 	// hash := sha256.Sum256([]byte(rawKey))
 	users := database.NewUsersRepository()
-	hash := sha256.Sum256([]byte(rawKey))
-	hex_string := hex.EncodeToString(hash[:])
-	user, err := users.FindByTokenHash(c, hex_string)
+	user, err := users.FindByToken(c, rawKey)
 	if err != nil {
 		return 0, false
 	}

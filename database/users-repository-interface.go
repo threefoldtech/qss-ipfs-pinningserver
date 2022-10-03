@@ -10,7 +10,7 @@ type UsersRepository interface {
 	// Get returns the Pin status for a given ID
 	FindByID(ctx context.Context, id string) (User, error)
 	// Find returns a list of Pins for the given parameters
-	FindByTokenHash(ctx context.Context, hash string) (User, error)
+	FindByToken(ctx context.Context, token string) (User, error)
 	// Delete removes the Pin according to the given ID
 	Delete(ctx context.Context, id string) error
 }

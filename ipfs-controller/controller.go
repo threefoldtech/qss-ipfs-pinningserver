@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipfs-cluster/ipfs-cluster/api"
 	"github.com/ipfs-cluster/ipfs-cluster/api/rest/client"
+	shell "github.com/ipfs/go-ipfs-api"
 	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
@@ -26,7 +27,11 @@ type clusterController struct {
 }
 
 func NewClusterController() (ipfsController, error) {
-	client, err := client.NewDefaultClient(&client.Config{Host: config.CFG.Cluster.Host, Port: config.CFG.Cluster.Port})
+	// ProxyAddr, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/5001")
+	client, err := client.NewDefaultClient(&client.Config{
+		Host: config.CFG.Cluster.Host,
+		Port: config.CFG.Cluster.Port,
+	})
 
 	if err != nil {
 		return nil, &ControllerError{
@@ -106,7 +111,7 @@ func (c *clusterController) Delegates(ctx context.Context) ([]string, error) {
 		return []string{}, err
 	}
 	delegates := []string{}
-	// TODO: All multiaddrs MUST end with `/p2p/{peerID}` and SHOULD be fully resolved and confirmed to be dialable from the public internet. Avoid sending addresses from local networks.
+	// TODO: All multiaddrs MUST end with `/p2p/{peerID}` and SHOULD be fully resolved and confirmed to be disable from the public internet. Avoid sending addresses from local networks.
 	for _, addr := range clientId.IPFS.Addresses {
 		delegates = append(delegates, addr.String())
 
@@ -166,13 +171,17 @@ func (c *clusterController) Status(ctx context.Context, cid string) (models.Stat
 }
 
 func (c *clusterController) IsPinned(ctx context.Context, cid string) (bool, error) {
-	cid_decoded, err := api.DecodeCid(cid)
+	status, err := c.Status(ctx, cid)
 	if err != nil {
-		return false, &ControllerError{
-			Type: INVALID_CID,
-			Err:  err,
-		}
+		return false, err
 	}
-	pinInfo, err := c.Client.Status(ctx, cid_decoded, false)
-	return pinInfo.Match(api.TrackerStatusPinned), nil
+	return status == models.PINNED, nil
+}
+
+func (c *clusterController) DagSize(ctx context.Context, cid string) (*shell.ObjectStats, error) {
+	r, err := c.Client.IPFS(ctx).ObjectStat(cid)
+	if err != nil {
+		return nil, err
+	}
+	return r, nil
 }
