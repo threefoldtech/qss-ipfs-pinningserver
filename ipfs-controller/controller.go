@@ -183,6 +183,11 @@ func (c *clusterController) IsPinned(ctx context.Context, cid string) (bool, err
 	return status == models.PINNED, nil
 }
 
+// cluster peer not aware or care about the dag size (we need it for the billing, right?), for that piece of information we need reach to the ipfs peer
+// reaching to ipfs peer directly would require ipfs proxy port to be exposed to work properly
+// usually/by default it running only on localhost, problem is that it should not be exposed without an authentication mechanism on top (nginx etc…).
+// and by default it provides no authentication nor encryption
+// maybe we could query a public ipfs gateway to fetch this information instead ?
 func (c *clusterController) DagSize(ctx context.Context, cid string) (*shell.ObjectStats, error) {
 	r, err := c.Client.IPFS(ctx).ObjectStat(cid)
 	if err != nil {

@@ -55,7 +55,7 @@ func main() {
 	stop()
 	loggerContext.Println("shutting down gracefully, press Ctrl+C again to force")
 
-	// The context is used to inform the server it has  seconds to finish
+	// The context is used to inform the server it has 10 seconds to finish
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

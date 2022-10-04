@@ -225,5 +225,6 @@ func GetPins(c *gin.Context) {
 
 // ReplacePinByRequestId - Replace pin object
 func ReplacePinByRequestId(c *gin.Context) {
+	// TODO
 	c.JSON(http.StatusNotImplemented, models.NewAPIError(http.StatusNotImplemented, "This functionality not implemented yet"))
 }
