@@ -12,11 +12,7 @@ import (
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
-const (
-	DefaultReplicationFactorMin = 1
-	DefaultReplicationFactorMax = 3
-	DefaultPinMode              = api.PinModeRecursive
-)
+const DefaultPinMode = api.PinModeRecursive
 
 type clusterController struct {
 	Client client.Client
@@ -29,8 +25,10 @@ type clusterController struct {
 func NewClusterController() (ipfsController, error) {
 	// ProxyAddr, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/5001")
 	client, err := client.NewDefaultClient(&client.Config{
-		Host: config.CFG.Cluster.Host,
-		Port: config.CFG.Cluster.Port,
+		Host:     config.CFG.Cluster.Host,
+		Port:     config.CFG.Cluster.Port,
+		Username: config.CFG.Cluster.Username,
+		Password: config.CFG.Cluster.Password,
 	})
 
 	if err != nil {
@@ -41,10 +39,11 @@ func NewClusterController() (ipfsController, error) {
 	}
 	c := &clusterController{
 		Client:               client,
-		ReplicationFactorMin: DefaultReplicationFactorMin,
-		ReplicationFactorMax: DefaultReplicationFactorMax,
+		ReplicationFactorMin: config.CFG.Cluster.ReplicationFactorMin,
+		ReplicationFactorMax: config.CFG.Cluster.ReplicationFactorMax,
 		PinMode:              DefaultPinMode,
 	}
+
 	return c, nil
 }
 

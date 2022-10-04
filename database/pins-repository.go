@@ -37,7 +37,7 @@ func (r *pins) InsertOrGet(ctx context.Context, user_id uint, pinStatus models.P
 }
 
 func (r *pins) Patch(ctx context.Context, user_id uint, id string, fields map[string]interface{}) error {
-	tx := r.db.Debug().Model(&PinDTO{}).Where("uuid = ? AND user_id = ?", id, user_id).Updates(fields)
+	tx := r.db.Model(&PinDTO{}).Where("uuid = ? AND user_id = ?", id, user_id).Updates(fields)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -66,20 +66,25 @@ func (r *pins) Find(
 
 	queryDB := r.db
 	if len(cids) != 0 {
-		// cids_list := strings.Split(cids, ",")
 		queryDB = queryDB.Where("cid IN ?", cids)
 	}
 	if name != "" {
 		queryDB = queryDB.Where("name = ?", name)
 	}
 	if len(statuses) != 0 {
-		// status_list := strings.Split(status, ",")
 		queryDB = queryDB.Where("status IN ?", statuses)
 	}
 	if user_id != 0 {
 		queryDB = queryDB.Where("user_id = ?", user_id)
 	}
-	// TODO: before, after
+	if !before.IsZero() {
+		queryDB = queryDB.Where("created_at < ?", before)
+	}
+
+	if !after.IsZero() {
+		queryDB = queryDB.Where("created_at > ?", after)
+	}
+
 	queryDB = queryDB.Limit(limit)
 	tx := queryDB.Find(&pins)
 	count := tx.RowsAffected

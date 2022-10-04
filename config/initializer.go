@@ -14,8 +14,12 @@ type authConfig struct {
 }
 
 type clusterConfig struct {
-	Host string
-	Port string
+	Host                 string
+	Port                 string
+	Username             string
+	Password             string
+	ReplicationFactorMin int
+	ReplicationFactorMax int
 }
 
 type serverConfig struct {
@@ -43,9 +47,25 @@ func LoadConfig() {
 	if !ok {
 		panic("`TFPIN_CLUSTER_PORT` Not present in the environment!\nPlease make sure to set all required environment variables.")
 	}
+	cluster_username, ok := os.LookupEnv("TFPIN_CLUSTER_USERNAME")
+	if !ok {
+		panic("`TFPIN_CLUSTER_USERNAME` Not present in the environment!\nPlease make sure to set all required environment variables.")
+	}
+	cluster_password, ok := os.LookupEnv("TFPIN_CLUSTER_PASSWORD")
+	if !ok {
+		panic("`TFPIN_CLUSTER_PASSWORD` Not present in the environment!\nPlease make sure to set all required environment variables.")
+	}
+	cluster_replication_min, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MIN")
+	if !ok {
+		panic("`TFPIN_CLUSTER_REPLICA_MIN` Not present in the environment!\nPlease make sure to set all required environment variables.")
+	}
+	cluster_replication_max, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MAX")
+	if !ok {
+		panic("`TFPIN_CLUSTER_REPLICA_MAX` Not present in the environment!\nPlease make sure to set all required environment variables.")
+	}
 	database_dsn, ok := os.LookupEnv("TFPIN_DB_DSN")
 	if !ok {
-		panic("`TFPIN_DB_DSN` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		database_dsn = "pins.db"
 	}
 	database_log_level, ok := os.LookupEnv("TFPIN_DB_LOG_LEVEL")
 	if !ok {
@@ -53,15 +73,27 @@ func LoadConfig() {
 	}
 	server_addr, ok := os.LookupEnv("TFPIN_SERVER_ADDR")
 	if !ok {
-		panic("`TFPIN_SERVER_ADDR` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		server_addr = ":8000"
 	}
 	auth_header_key, ok := os.LookupEnv("TFPIN_AUTH_HEADER_KEY")
 	if !ok {
-		panic("`TFPIN_AUTH_HEADER_KEY` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		auth_header_key = "Authorization"
+	}
+	cluster_replica_min_int, err := strconv.Atoi(cluster_replication_min)
+	if err != nil || cluster_replica_min_int < 1 {
+		panic("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value!")
+	}
+	cluster_replica_max_int, err := strconv.Atoi(cluster_replication_max)
+	if err != nil || cluster_replica_max_int < cluster_replica_min_int {
+		panic("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value!")
 	}
 	cc := clusterConfig{
-		Host: cluster_host,
-		Port: cluster_port,
+		Host:                 cluster_host,
+		Port:                 cluster_port,
+		Username:             cluster_username,
+		Password:             cluster_password,
+		ReplicationFactorMin: cluster_replica_min_int,
+		ReplicationFactorMax: cluster_replica_max_int,
 	}
 	database_ll_int, err := strconv.Atoi(database_log_level)
 	if err != nil || database_ll_int < 0 || database_ll_int > 4 {

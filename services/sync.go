@@ -10,15 +10,13 @@ import (
 	ipfsController "github.com/threefoldtech/tf-pinning-service/ipfs-controller"
 )
 
-const interval = 10 // for testing
-
-func SetSyncService() {
+func SetSyncService(interval int) {
 	ctx := context.Background()
 	s := GetScheduler()
 	log := logger.GetDefaultLogger()
 	s.Every(interval).Minutes().Do(func() {
 		loggerContext := log.WithFields(logger.Fields{
-			"topic": "Services-Sync",
+			"topic": "Service-Sync",
 		})
 		loggerContext.Info("Sync service started")
 		pinsRepo := database.NewPinsRepository()
@@ -46,6 +44,8 @@ func SetSyncService() {
 						"status":     pin.Status,
 						"new status": "",
 					}).Info("CID stuck for a week+")
+					// too many retry attempts can generate a lot of extra requests and extra load on the system.
+					// Should we delete the request on behalf of the user
 				}
 			}
 		}

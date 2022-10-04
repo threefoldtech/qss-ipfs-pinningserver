@@ -1,9 +1,12 @@
 FROM golang:1.10 AS build
 WORKDIR /go/src
-COPY pinning-api ./pinning-api
-COPY ipfs-controller ./ipfs-controller
-COPY database ./database
 COPY auth ./auth
+COPY config ./config
+COPY database ./database
+COPY ipfs-controller ./ipfs-controller
+COPY logger ./logger
+COPY pinning-api ./pinning-api
+COPY services ./services
 COPY main.go .
 
 ENV CGO_ENABLED=0
