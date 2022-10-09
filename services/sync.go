@@ -19,15 +19,16 @@ func SetSyncService(interval int) {
 			"topic": "Service-Sync",
 		})
 		loggerContext.Info("Sync service started")
-		pinsRepo := database.NewPinsRepository()
-		cl, err := ipfsController.NewClusterController()
+		strated_time := time.Now()
+		pinsRepo := database.GetPinsRepository()
+		cl, err := ipfsController.GetClusterController()
 		if err != nil {
 			loggerContext.WithFields(logger.Fields{
 				"from_error": err.Error(),
 			}).Error("Can't get cluster controller")
+			return
 		}
 		pins, _ := pinsRepo.FindByStatus(ctx, []string{"failed", "queued"}) // TODO: Use rows iteration for optimal memory usage
-
 		for _, pin := range pins {
 			if pinned, _ := cl.IsPinned(ctx, pin.Cid); pinned {
 				pinsRepo.Patch(ctx, pin.UserID, pin.UUID, map[string]interface{}{"status": "pinned"})
@@ -49,5 +50,6 @@ func SetSyncService(interval int) {
 				}
 			}
 		}
+		loggerContext.Info("Sync service finished. took ", time.Now().Sub(strated_time))
 	})
 }

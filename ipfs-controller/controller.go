@@ -22,7 +22,7 @@ type clusterController struct {
 	PinMode              api.PinMode
 }
 
-func NewClusterController() (ipfsController, error) {
+func GetClusterController() (ipfsController, error) {
 	// ProxyAddr, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/5001")
 	client, err := client.NewDefaultClient(&client.Config{
 		Host:     config.CFG.Cluster.Host,

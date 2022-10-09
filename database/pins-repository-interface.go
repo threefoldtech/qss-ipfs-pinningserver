@@ -11,6 +11,8 @@ import (
 type PinsRepository interface {
 	Lock()
 	Unlock()
+	LockByCID(string)
+	UnlockByCID(string)
 	// Set adds or updates a Pin
 	InsertOrGet(ctx context.Context, userID uint, pinStatus models.PinStatus) (models.PinStatus, error)
 	// Patch patches the fields of a Pin according to the given ID
@@ -30,4 +32,7 @@ type PinsRepository interface {
 	Delete(ctx context.Context, userID uint, id string) error
 	CIDRefrenceCount(ctx context.Context, cid string) int64
 	FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error)
+	Begin() *pins
+	Rollback()
+	Commit()
 }

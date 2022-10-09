@@ -6,16 +6,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/moby/locker"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 	"gorm.io/gorm"
 )
 
 type pins struct {
-	db *gorm.DB
-	sync.Mutex
+	db    *gorm.DB
+	locks *locker.Locker
+	mu    sync.Mutex
 }
 
-func NewPinsRepository() PinsRepository {
+func GetPinsRepository() PinsRepository {
 	return &pins{
 		db: DB,
 	}
@@ -117,7 +119,8 @@ func (r *pins) CIDRefrenceCount(ctx context.Context, cid string) int64 {
 
 func (r *pins) FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error) {
 	var pins []PinDTO
-
+	// TODO: use channel, get rows and iterate over the results rows
+	// for memory usage optimization
 	queryDB := r.db
 
 	if len(statuses) != 0 {
@@ -129,4 +132,35 @@ func (r *pins) FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, e
 		return []PinDTO{}, tx.Error
 	}
 	return pins, nil
+}
+
+func (r *pins) Begin() *pins {
+	tx := DB.Begin()
+	return &pins{
+		db: tx,
+	}
+}
+
+func (r *pins) Rollback() {
+	r.Rollback()
+}
+
+func (r *pins) Commit() {
+	r.Commit()
+}
+
+func (r *pins) LockByCID(cid string) {
+	r.locks.Lock(cid)
+}
+
+func (r *pins) UnlockByCID(cid string) {
+	r.locks.Unlock(cid)
+}
+
+func (r *pins) Lock() {
+	r.mu.Unlock()
+}
+
+func (r *pins) Unlock() {
+	r.mu.Unlock()
 }

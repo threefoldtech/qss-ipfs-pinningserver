@@ -34,10 +34,10 @@ func AddPin(c *gin.Context) {
 		return
 	}
 
-	pinsRepo := database.NewPinsRepository()
-	pinsRepo.Lock()
-	defer pinsRepo.Unlock()
-	cl, err := ipfsController.NewClusterController()
+	pinsRepo := database.GetPinsRepository()
+	pinsRepo.LockByCID(pin.Cid)
+	defer pinsRepo.UnlockByCID(pin.Cid)
+	cl, err := ipfsController.GetClusterController()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
@@ -65,7 +65,7 @@ func AddPin(c *gin.Context) {
 		"request_id": pinStatus.Requestid,
 		"cid":        pin.Cid,
 	})
-	err = cl.Add(c, pin)
+	err = cl.Add(c, pin) // use hooks to roll back in case request can't make it to the cluster?
 	if err != nil {
 		ce, ok := err.(*ipfsController.ControllerError)
 		if ok {
@@ -134,18 +134,18 @@ func DeletePinByRequestId(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, "Invalid `requestid` query parameter"))
 		return
 	}
-	pinsRepo := database.NewPinsRepository()
-	pinsRepo.Lock()
-	defer pinsRepo.Unlock()
+	pinsRepo := database.GetPinsRepository()
+
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
 		return
 	}
 	cid := pin_status.Pin.Cid
-
+	pinsRepo.LockByCID(cid)
+	defer pinsRepo.UnlockByCID(cid)
 	if pinsRepo.CIDRefrenceCount(c, cid) == 1 {
-		cl, err := ipfsController.NewClusterController()
+		cl, err := ipfsController.GetClusterController()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 			return
@@ -173,7 +173,7 @@ func GetPinByRequestId(c *gin.Context) {
 		return
 	}
 
-	pinsRepo := database.NewPinsRepository()
+	pinsRepo := database.GetPinsRepository()
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
@@ -218,7 +218,7 @@ func GetPins(c *gin.Context) {
 			return
 		}
 	}
-	pinsRepo := database.NewPinsRepository()
+	pinsRepo := database.GetPinsRepository()
 	pin_results, err := pinsRepo.Find(c, getUserIdFromContext(c), cids, statuses, name, before_t, after_t, match, limit_int)
 	c.JSON(http.StatusOK, pin_results)
 }
