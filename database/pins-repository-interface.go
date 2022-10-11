@@ -9,8 +9,6 @@ import (
 
 // Pins represents an interface to the Pins database
 type PinsRepository interface {
-	Lock()
-	Unlock()
 	LockByCID(string)
 	UnlockByCID(string)
 	// Set adds or updates a Pin
@@ -30,9 +28,14 @@ type PinsRepository interface {
 	) (models.PinResults, error)
 	// Delete removes the Pin according to the given ID
 	Delete(ctx context.Context, userID uint, id string) error
-	CIDRefrenceCount(ctx context.Context, cid string) int64
+	CIDRefrenceCount(ctx context.Context, cid string) (int64, error)
 	FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error)
-	Begin() *pins
-	Rollback()
-	Commit()
+	ProcessByStatus(ctx context.Context, statuses []string, c chan bool) (chan *PinDTO, error)
+	/*
+		 	Lock()
+			Unlock()
+			Begin() *pins
+			Rollback()
+			Commit()
+	*/
 }

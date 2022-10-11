@@ -28,10 +28,20 @@ func SetSyncService(interval int) {
 			}).Error("Can't get cluster controller")
 			return
 		}
-		pins, _ := pinsRepo.FindByStatus(ctx, []string{"failed", "queued"}) // TODO: Use rows iteration for optimal memory usage
-		for _, pin := range pins {
-			if pinned, _ := cl.IsPinned(ctx, pin.Cid); pinned {
-				pinsRepo.Patch(ctx, pin.UserID, pin.UUID, map[string]interface{}{"status": "pinned"})
+		done := make(chan bool, 1)
+		pins, _ := pinsRepo.ProcessByStatus(ctx, []string{"failed", "queued"}, done) // TODO: Use rows iteration for optimal memory usage
+		for pin := range pins {
+			pinned, err := cl.IsPinned(ctx, pin.Cid)
+			if err != nil {
+				loggerContext.WithFields(logger.Fields{
+					"cid":        pin.Cid,
+					"from_error": err.Error(),
+				}).Warn("Can't get the pin status from the cluster peer!")
+				done <- pinned
+				continue
+			}
+			if pinned {
+				pin.Status = database.PINNED
 				loggerContext.WithFields(logger.Fields{
 					"cid":        pin.Cid,
 					"status":     pin.Status,
@@ -49,6 +59,7 @@ func SetSyncService(interval int) {
 					// Should we delete the request on behalf of the user
 				}
 			}
+			done <- pinned
 		}
 		loggerContext.Info("Sync service finished. took ", time.Now().Sub(strated_time))
 	})

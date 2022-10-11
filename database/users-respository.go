@@ -25,7 +25,10 @@ func (u *users) Insert(ctx context.Context, access_token string) error {
 	user := User{
 		AccessToken: hex_string,
 	}
-	u.db.Create(&user)
+	tx := u.db.Create(&user)
+	if tx.Error != nil {
+		return tx.Error
+	}
 	return nil
 }
 

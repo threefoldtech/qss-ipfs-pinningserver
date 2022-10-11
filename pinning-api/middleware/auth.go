@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -10,26 +9,30 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/database"
+	"github.com/threefoldtech/tf-pinning-service/logger"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
 func ApiKeyMiddleware() gin.HandlerFunc {
+	log := logger.GetDefaultLogger()
+	logContext := log.WithFields(logger.Fields{
+		"topic": "Middleware-ApiKey",
+	})
 	apiKeyHeader := config.CFG.Auth.ApiKeyHeader
-
 	return func(c *gin.Context) {
 		apiKey, err := bearerToken(c.Request, apiKeyHeader)
 		if err != nil {
-			fmt.Print("API key authentication failed", "error", err)
+			logContext.Warn("API key authentication failed", "error", err)
 			return
 		}
 
 		if user_id, ok := apiKeyIsValid(c, apiKey); !ok {
 			hostIP, _, err := net.SplitHostPort(c.Request.RemoteAddr)
 			if err != nil {
-				fmt.Print("failed to parse remote address", "error", err)
+				logContext.Warn("Failed to parse remote address", "error", err)
 				hostIP = c.Request.RemoteAddr
 			}
-			fmt.Print("no matching API key found", "remoteIP", hostIP)
+			logContext.Info("No matching API key found", "remoteIP", hostIP)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.Failure{
 				Error: models.FailureError{
 					Reason:  "UNAUTHORIZED",

@@ -23,13 +23,12 @@ func main() {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-
+	config.LoadConfig()
 	log := logger.GetDefaultLogger()
 	loggerContext := log.WithFields(logger.Fields{
 		"topic": "Server",
 	})
-	loggerContext.Info("Server started")
-	config.LoadConfig()
+	loggerContext.Info("Config loaded, Server starting..")
 	database.ConnectDatabase()
 	services.SetSyncService(10) // for now run every 10 minutes
 	services.StartInBackground()
@@ -57,7 +56,7 @@ func main() {
 
 	// The context is used to inform the server it has 10 seconds to finish
 	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		loggerContext.Fatal("Server forced to shutdown: ", err)

@@ -27,16 +27,27 @@ func AddPin(c *gin.Context) {
 	log := logger.GetDefaultLogger()
 
 	var pin models.Pin
-	// c.Get("userID")
 
 	if err := c.ShouldBindJSON(&pin); err != nil {
 		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, err.Error()))
 		return
 	}
-
+	loggerContext := log.WithFields(logger.Fields{
+		"topic":   "Handler-AddPin",
+		"user_id": getUserIdFromContext(c),
+		"cid":     pin.Cid,
+	})
 	pinsRepo := database.GetPinsRepository()
+
+	loggerContext.Debug("Trying to acquire the lock")
 	pinsRepo.LockByCID(pin.Cid)
-	defer pinsRepo.UnlockByCID(pin.Cid)
+	loggerContext.Debug("Lock acquired")
+
+	defer func() {
+		pinsRepo.UnlockByCID(pin.Cid)
+		loggerContext.Debug("Lock released")
+	}()
+
 	cl, err := ipfsController.GetClusterController()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
@@ -59,11 +70,8 @@ func AddPin(c *gin.Context) {
 		return
 	}
 	isNew := pinStatus.Requestid == request_id
-	loggerContext := log.WithFields(logger.Fields{
-		"topic":      "Handler-AddPin",
-		"user_id":    getUserIdFromContext(c),
+	loggerContext = loggerContext.WithFields(logger.Fields{
 		"request_id": pinStatus.Requestid,
-		"cid":        pin.Cid,
 	})
 	err = cl.Add(c, pin) // use hooks to roll back in case request can't make it to the cluster?
 	if err != nil {
@@ -93,10 +101,13 @@ func AddPin(c *gin.Context) {
 				loggerContext.WithFields(logger.Fields{
 					"from_error": err.Error(),
 				}).Error("First attempt for pin failed, cluster will keep retry")
-				pinsRepo.Patch(ctx, getUserIdFromContext(c), pinStatus.Requestid, map[string]interface{}{"status": db.FAILED})
+				// pinsRepo.Patch(ctx, getUserIdFromContext(ctx), pinStatus.Requestid, map[string]interface{}{"status": db.FAILED})
 				return
 			}
-			pinsRepo.Patch(c, getUserIdFromContext(c), pinStatus.Requestid, map[string]interface{}{"status": db.PINNED})
+			pinsRepo.Patch(ctx, getUserIdFromContext(ctx), pinStatus.Requestid, map[string]interface{}{"status": db.PINNED})
+			loggerContext.WithFields(logger.Fields{
+				"new_status": "pinned",
+			}).Debug("Status updated")
 			// last_status := models.QUEUED
 			// for end := time.Now().Add(time.Minute * 10); ; {
 			// 	status, _ := cl.Status(c, pin.Cid)
@@ -121,13 +132,13 @@ func AddPin(c *gin.Context) {
 	}
 	loggerContext.WithFields(logger.Fields{
 		"status": pinStatus.Status,
-	}).Info("Request Received and handled")
+	}).Debug("Request Received and handled")
 	c.JSON(http.StatusAccepted, pinStatus)
 }
 
 // DeletePinByRequestId - Remove pin object
 func DeletePinByRequestId(c *gin.Context) {
-	// check if the cid shared between multiple requests
+	log := logger.GetDefaultLogger()
 	req_id := c.Params.ByName("requestid")
 	_, err := uuid.Parse(req_id)
 	if err != nil {
@@ -135,16 +146,46 @@ func DeletePinByRequestId(c *gin.Context) {
 		return
 	}
 	pinsRepo := database.GetPinsRepository()
-
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
 		return
 	}
 	cid := pin_status.Pin.Cid
+	loggerContext := log.WithFields(logger.Fields{
+		"topic":      "Handler-DeletePin",
+		"user_id":    getUserIdFromContext(c),
+		"request_id": pin_status.Requestid,
+		"cid":        cid,
+	})
+	loggerContext.Debug("Trying to acquire the lock")
 	pinsRepo.LockByCID(cid)
-	defer pinsRepo.UnlockByCID(cid)
-	if pinsRepo.CIDRefrenceCount(c, cid) == 1 {
+	loggerContext.Debug("Lock acquired")
+
+	defer func() {
+		pinsRepo.UnlockByCID(cid)
+		loggerContext.Debug("Lock released")
+	}()
+	// workaround
+	pin_status, err = pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
+		return
+	}
+	count, err := pinsRepo.CIDRefrenceCount(c, cid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	err = pinsRepo.Delete(c, getUserIdFromContext(c), req_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	if count == 1 {
+		loggerContext.Debug("This cid no longer referenced by service records, and will be unpinned.")
 		cl, err := ipfsController.GetClusterController()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
@@ -156,11 +197,7 @@ func DeletePinByRequestId(c *gin.Context) {
 			return
 		}
 	}
-	err = pinsRepo.Delete(c, getUserIdFromContext(c), req_id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
-		return
-	}
+
 	c.JSON(http.StatusAccepted, gin.H{})
 }
 
@@ -225,6 +262,142 @@ func GetPins(c *gin.Context) {
 
 // ReplacePinByRequestId - Replace pin object
 func ReplacePinByRequestId(c *gin.Context) {
-	// TODO
-	c.JSON(http.StatusNotImplemented, models.NewAPIError(http.StatusNotImplemented, "This functionality not implemented yet"))
+	req_id := c.Params.ByName("requestid")
+	_, err := uuid.Parse(req_id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, "Invalid `requestid` query parameter"))
+		return
+	}
+	log := logger.GetDefaultLogger()
+	var pin models.Pin
+
+	if err := c.ShouldBindJSON(&pin); err != nil {
+		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, err.Error()))
+		return
+	}
+	loggerContext := log.WithFields(logger.Fields{
+		"topic":          "Handler-ReplacePin",
+		"user_id":        getUserIdFromContext(c),
+		"old_request_id": req_id,
+		"cid":            pin.Cid,
+	})
+	pinsRepo := database.GetPinsRepository()
+	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
+		return
+	}
+
+	cid := pin_status.Pin.Cid
+	if cid == pin.Cid {
+		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, "The cid is the same as the one you want to replace!"))
+		return
+	}
+	loggerContext.Debug("Trying to acquire the lock for pin operation")
+	pinsRepo.LockByCID(pin.Cid)
+	loggerContext.Debug("Lock acquired")
+
+	cl, err := ipfsController.GetClusterController()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	request_id := uuid.New().String()
+	delegates, err := cl.Delegates(c)
+	// log delegates error
+	pinStatus := models.PinStatus{
+		Pin:       pin,
+		Requestid: request_id,
+		Status:    models.QUEUED,
+		Created:   time.Now(),
+		Delegates: delegates,
+	}
+	pinStatus, err = pinsRepo.InsertOrGet(c, getUserIdFromContext(c), pinStatus)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	isNew := pinStatus.Requestid == request_id
+	loggerContext = loggerContext.WithFields(logger.Fields{
+		"request_id": pinStatus.Requestid,
+	})
+	err = cl.Add(c, pin)
+	if err != nil {
+		ce, ok := err.(*ipfsController.ControllerError)
+		if ok {
+			switch ce.Type {
+			case ipfsController.INVALID_CID, ipfsController.INVALID_ORIGINS:
+				c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, ce.Error()))
+				return
+			default:
+				c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+				return
+			}
+		}
+	}
+	isPinned, err := cl.IsPinned(c, pin.Cid)
+	if err != nil {
+		loggerContext.WithFields(logger.Fields{
+			"from_error": err.Error(),
+		}).Error("Can't get pin status")
+	} else if !isPinned && isNew {
+		go func(ctx *gin.Context) {
+			err := cl.WaitForPinned(ctx, pin.Cid) // TODO: this will timeout if no progress could be made, but the cluster will retry later. need to sync db in that case.
+			if err != nil {
+				loggerContext.WithFields(logger.Fields{
+					"from_error": err.Error(),
+				}).Error("First attempt for pin failed, cluster will keep retry")
+				return
+			}
+			pinsRepo.Patch(ctx, getUserIdFromContext(ctx), pinStatus.Requestid, map[string]interface{}{"status": db.PINNED})
+
+		}(c.Copy())
+	}
+	if isPinned {
+		pinStatus.Status = models.PINNED
+		pinsRepo.Patch(c, getUserIdFromContext(c), pinStatus.Requestid, map[string]interface{}{"status": db.PINNED})
+	}
+	pinsRepo.UnlockByCID(pin.Cid)
+	loggerContext.Debug("Lock released")
+
+	loggerContext.Debug("Trying to acquire the lock for unpin operation")
+	pinsRepo.LockByCID(cid)
+	defer func() {
+		pinsRepo.UnlockByCID(cid)
+		loggerContext.Debug("Lock released")
+	}()
+	// workaround
+	pin_status, err = pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
+		return
+	}
+	// delete
+	count, err := pinsRepo.CIDRefrenceCount(c, cid)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	err = pinsRepo.Delete(c, getUserIdFromContext(c), req_id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	if count == 1 {
+		loggerContext.Debug("This cid no longer referenced by service records, and will be unpinned.")
+		cl, err := ipfsController.GetClusterController()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+			return
+		}
+		err = cl.Remove(c, cid)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+			return
+		}
+	}
+	c.JSON(http.StatusAccepted, gin.H{})
 }

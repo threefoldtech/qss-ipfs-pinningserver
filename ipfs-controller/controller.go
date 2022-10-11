@@ -2,7 +2,6 @@ package ipfsController
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/ipfs-cluster/ipfs-cluster/api"
@@ -143,7 +142,6 @@ func (c *clusterController) WaitForPinned(ctx context.Context, cid string) error
 		CheckFreq: 10 * time.Second,
 	})
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	return nil

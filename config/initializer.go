@@ -3,8 +3,6 @@ package config
 import (
 	"os"
 	"strconv"
-
-	"github.com/threefoldtech/tf-pinning-service/logger"
 )
 
 var CFG Config
@@ -23,7 +21,8 @@ type clusterConfig struct {
 }
 
 type serverConfig struct {
-	Addr string // ex. ":8080" or "0.0.0.0:8000"
+	Addr     string // ex. ":8080" or "0.0.0.0:8000"
+	LogLevel int    // could be 0 to 6, meaning PanicLevel, FatalLevel, ErrorLevel, WarnLevel, InfoLevel, DebugLevel, TraceLevel
 }
 
 type dbConfig struct {
@@ -75,6 +74,10 @@ func LoadConfig() {
 	if !ok {
 		server_addr = ":8000"
 	}
+	server_log_level, ok := os.LookupEnv("TFPIN_SERVER_LOG_LEVEL")
+	if !ok {
+		server_log_level = "3"
+	}
 	auth_header_key, ok := os.LookupEnv("TFPIN_AUTH_HEADER_KEY")
 	if !ok {
 		auth_header_key = "Authorization"
@@ -96,15 +99,20 @@ func LoadConfig() {
 		ReplicationFactorMax: cluster_replica_max_int,
 	}
 	database_ll_int, err := strconv.Atoi(database_log_level)
-	if err != nil || database_ll_int < 0 || database_ll_int > 4 {
+	if err != nil || database_ll_int < 1 || database_ll_int > 4 {
 		panic("`TFPIN_DB_LOG_LEVEL` set to invalid value!")
 	}
 	dbc := dbConfig{
 		DSN:      database_dsn,
 		LogLevel: database_ll_int,
 	}
+	server_ll_int, err := strconv.Atoi(server_log_level)
+	if err != nil || server_ll_int < 0 || server_ll_int > 6 {
+		panic("`TFPIN_SERVER_LOG_LEVEL` set to invalid value!")
+	}
 	sc := serverConfig{
-		Addr: server_addr,
+		Addr:     server_addr,
+		LogLevel: server_ll_int,
 	}
 	ac := authConfig{
 		ApiKeyHeader: auth_header_key,
@@ -115,8 +123,4 @@ func LoadConfig() {
 		Server:  sc,
 		Auth:    ac,
 	}
-	log := logger.GetDefaultLogger()
-	log.WithFields(logger.Fields{
-		"topic": "Config",
-	}).Info("Configurations have been successfully loaded")
 }
