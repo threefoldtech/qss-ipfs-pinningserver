@@ -40,28 +40,38 @@ type Config struct {
 func LoadConfig() {
 	cluster_host, ok := os.LookupEnv("TFPIN_CLUSTER_HOSTNAME")
 	if !ok {
-		panic("`TFPIN_CLUSTER_HOSTNAME` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		cluster_host = "127.0.0.1"
 	}
 	cluster_port, ok := os.LookupEnv("TFPIN_CLUSTER_PORT")
 	if !ok {
-		panic("`TFPIN_CLUSTER_PORT` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		cluster_port = "9097"
 	}
 	cluster_username, ok := os.LookupEnv("TFPIN_CLUSTER_USERNAME")
-	if !ok {
-		panic("`TFPIN_CLUSTER_USERNAME` Not present in the environment!\nPlease make sure to set all required environment variables.")
-	}
+
 	cluster_password, ok := os.LookupEnv("TFPIN_CLUSTER_PASSWORD")
-	if !ok {
-		panic("`TFPIN_CLUSTER_PASSWORD` Not present in the environment!\nPlease make sure to set all required environment variables.")
-	}
+
 	cluster_replication_min, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MIN")
+	var cluster_replica_min_int int
 	if !ok {
-		panic("`TFPIN_CLUSTER_REPLICA_MIN` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		cluster_replica_min_int = -1
+	} else {
+		cluster_replica_min_int, err := strconv.Atoi(cluster_replication_min)
+		if err != nil || cluster_replica_min_int < 1 {
+			panic("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value!")
+		}
 	}
+
 	cluster_replication_max, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MAX")
+	var cluster_replica_max_int int
 	if !ok {
-		panic("`TFPIN_CLUSTER_REPLICA_MAX` Not present in the environment!\nPlease make sure to set all required environment variables.")
+		cluster_replica_max_int = -1
+	} else {
+		cluster_replica_max_int, err := strconv.Atoi(cluster_replication_max)
+		if err != nil || cluster_replica_max_int < cluster_replica_min_int {
+			panic("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value!")
+		}
 	}
+
 	database_dsn, ok := os.LookupEnv("TFPIN_DB_DSN")
 	if !ok {
 		database_dsn = "pins.db"
@@ -82,14 +92,7 @@ func LoadConfig() {
 	if !ok {
 		auth_header_key = "Authorization"
 	}
-	cluster_replica_min_int, err := strconv.Atoi(cluster_replication_min)
-	if err != nil || cluster_replica_min_int < 1 {
-		panic("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value!")
-	}
-	cluster_replica_max_int, err := strconv.Atoi(cluster_replication_max)
-	if err != nil || cluster_replica_max_int < cluster_replica_min_int {
-		panic("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value!")
-	}
+
 	cc := clusterConfig{
 		Host:                 cluster_host,
 		Port:                 cluster_port,

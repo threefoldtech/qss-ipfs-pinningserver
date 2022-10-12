@@ -31,10 +31,14 @@ func SetSyncService(interval int) {
 		done := make(chan bool, 1)
 		pins, _ := pinsRepo.ProcessByStatus(ctx, []string{"failed", "queued"}, done) // TODO: Use rows iteration for optimal memory usage
 		for pin := range pins {
+			innerContext := loggerContext.WithFields(logger.Fields{
+				"cid":        pin.Cid,
+				"status":     pin.Status,
+				"user_id":    pin.UserID,
+				"request_id": pin.UUID})
 			pinned, err := cl.IsPinned(ctx, pin.Cid)
 			if err != nil {
-				loggerContext.WithFields(logger.Fields{
-					"cid":        pin.Cid,
+				innerContext.WithFields(logger.Fields{
 					"from_error": err.Error(),
 				}).Warn("Can't get the pin status from the cluster peer!")
 				done <- pinned
@@ -42,19 +46,15 @@ func SetSyncService(interval int) {
 			}
 			if pinned {
 				pin.Status = database.PINNED
-				loggerContext.WithFields(logger.Fields{
-					"cid":        pin.Cid,
-					"status":     pin.Status,
-					"new status": pinned,
+				innerContext.WithFields(logger.Fields{
+					"new status": "pinned",
 				}).Info("Status updated")
 			} else {
 				elapsed := time.Now().Sub(pin.CreatedAt)
 				if elapsed.Hours() > 24*7 {
-					loggerContext.WithFields(logger.Fields{
-						"cid":        pin.Cid,
-						"status":     pin.Status,
+					innerContext.WithFields(logger.Fields{
 						"new status": "",
-					}).Info("CID stuck for a week+")
+					}).Warn("CID stuck for a week+")
 					// too many retry attempts can generate a lot of extra requests and extra load on the system.
 					// Should we delete the request on behalf of the user
 				}

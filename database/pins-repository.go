@@ -143,44 +143,45 @@ func (r *pins) FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, e
 	return pins, nil
 }
 
-// func (r *pins) ProcessByStatus(ctx context.Context, statuses []string, done chan bool) (chan *PinDTO, error) {
-// 	queryDB := r.db
-// 	var pins []PinDTO
-
-// 	if len(statuses) != 0 {
-// 		queryDB = queryDB.Where("status IN ?", statuses)
-// 	}
-
-// 	c := make(chan *PinDTO)
-// 	go func() {
-// 		result := queryDB.FindInBatches(&pins, 100, func(tx *gorm.DB, batch int) error {
-// 			for _, pin := range pins {
-// 				c <- &pin
-// 				if modified := <-done; modified {
-// 					tx := r.db.Model(&PinDTO{}).Where("uuid = ? ", pin.UUID).Updates(map[string]interface{}{"status": pin.Status})
-// 					fmt.Println(tx.Error)
-// 				}
-// 			}
-// 			//time.Sleep(time.Minute)
-// 			//fmt.Println("tx.error: ", tx.Error)
-// 			//fmt.Println("RowsAffected: ", tx.RowsAffected) // number of records in this batch
-
-// 			//fmt.Println("Batch: ", batch) // Batch 1, 2, 3
-
-// 			// returns error will stop future batches
-// 			return nil
-// 		})
-// 		close(c)
-// 		// TODO: log error
-// 		fmt.Println("Error: ", result.Error) // returned error
-// 		//fmt.Println(":", result.RowsAffected) // processed records count in all batches
-
-// 	}()
-
-// 	return c, nil
-// }
-
 func (r *pins) ProcessByStatus(ctx context.Context, statuses []string, done chan bool) (chan *PinDTO, error) {
+	queryDB := r.db
+	var pins []PinDTO
+
+	if len(statuses) != 0 {
+		queryDB = queryDB.Where("status IN ?", statuses)
+	}
+
+	c := make(chan *PinDTO)
+	go func() {
+		result := queryDB.FindInBatches(&pins, 100, func(tx *gorm.DB, batch int) error {
+			for _, pin := range pins {
+				c <- &pin
+				if modified := <-done; modified {
+					res := r.db.Model(&PinDTO{}).Where("uuid = ? ", pin.UUID).Updates(map[string]interface{}{"status": pin.Status})
+					fmt.Println(res.Error)
+					fmt.Println(res.RowsAffected)
+				}
+			}
+			//time.Sleep(time.Minute)
+			//fmt.Println("tx.error: ", tx.Error)
+			//fmt.Println("RowsAffected: ", tx.RowsAffected) // number of records in this batch
+
+			//fmt.Println("Batch: ", batch) // Batch 1, 2, 3
+
+			// returns error will stop future batches
+			return nil
+		})
+		close(c)
+		// TODO: log error
+		fmt.Println("Error: ", result.Error) // returned error
+		//fmt.Println(":", result.RowsAffected) // processed records count in all batches
+
+	}()
+
+	return c, nil
+}
+
+/* func (r *pins) ProcessByStatus(ctx context.Context, statuses []string, done chan bool) (chan *PinDTO, error) {
 	queryDB := r.db
 
 	if len(statuses) != 0 {
@@ -202,13 +203,18 @@ func (r *pins) ProcessByStatus(ctx context.Context, statuses []string, done chan
 			queryDB.ScanRows(rows, &pin)
 			c <- &pin
 			if modified := <-done; modified {
-				r.db.Model(&PinDTO{}).Where("uuid = ? ", pin.UUID).Updates(map[string]interface{}{"status": pin.Status}) // update only the field of interest
+				fmt.Println("Waiting here")
+				time.Sleep(time.Minute)
+
+				tx := 	.Save(&pin)
+				fmt.Println(tx.Error)
+				fmt.Println(tx.RowsAffected)
 			}
 		}
 	}()
 
 	return c, nil
-}
+} */
 
 func (r *pins) LockByCID(cid string) {
 	//fmt.Println("trying to acquire lock for: ", cid)

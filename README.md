@@ -66,10 +66,14 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#compile">Compile</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
+    <ul>
+        <li><a href="#environment-variables">Environment Variables</a></li>
+    </ul>
+    <li><a href="#interacting-with-the-pinning-service">Interacting With The Pinning Service</a></li>
     <li><a href="#api-specs">API Specs</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -109,15 +113,48 @@ IPFS pinning service backed by ThreeFold decentralized grid and Quantum Safe Fil
 <!-- GETTING STARTED -->
 ## Getting Started
 
-This is WIP. To get a local copy up and running follow these simple example steps.
+Threefold pinning service is a IPFS pinning service that complies with the IPFS Pinning Service API specification. it combines the content addressing capabilities of IPFS, the decentralized, Peer To Peer Internet infrastructure of Threefold, and Threefold's distributed and ultra-secure storage backend QSFS(Quantum-Safe Storage Filesystem) in order to achieve a powerful decentralized storage solution, wrapping the power of these systems into an easy-to-use service with simple rest API.
 
 ### Prerequisites
 
-TODO
+- An IPFS cluster with at least one IPFS peer.
+  - For development you can spin up a local IPFS Cluster instance. [setup instructions](https://docs.ipfs.tech/install/server-infrastructure/#create-a-local-cluster).
+  - For setup IPFS and IPFS Cluster on a production environment see [here](https://ipfscluster.io/documentation/deployment/)
+- The tfpin web service binary.
+  - You can download it from releases or compile from the source code.
+  If you need to compile from the source code, you will need also:
+    - An installation of Go 1.16 or later. [installation instructions](https://go.dev/doc/install)
+    - Git client
 
-### Installation
 
-see [here](./core/README.md#overview)
+### Compile
+
+To compile tfpin binary from the source code, follow below instructions 
+
+1 - Clone the repository:
+  - Open Terminal, Change the current working directory to the location where you want the cloned directory, and type
+  ```sh
+  git clone https://github.com/threefoldtech/tf-pinning-service.git
+  ```
+2- Compile:
+  - Change to `./tf-pinning-service` and type
+  ```sh
+  make build
+  ```
+
+  Then find the compiled binary file `tfpin` in the repo root directory.
+
+Other make scripts available.
+
+```sh
+make run        # run the web server
+```
+
+```sh
+make build_run  # compile and run the web server
+```
+
+Make sure to set correctly the required environment variables. see below usage section.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -126,16 +163,47 @@ see [here](./core/README.md#overview)
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-TODO
+Set the required environment variables (see next section), then run the compiled binary
+
+```sh
+TFPIN_CLUSTER_HOSTNAME="cluster-host-name" TFPIN_CLUSTER_USERNAME="usname" TFPIN_CLUSTER_PASSWORD="password" ./tfpin
+```
+
+### Environment Variables
+
+| Environment Variable  	| Description  	| Default Value  	|
+|---	|---	|---	|
+| TFPIN_CLUSTER_HOSTNAME  	|   	| 127.0.0.1  	|
+| TFPIN_CLUSTER_PORT  	|   	| 9097  	|
+| TFPIN_CLUSTER_USERNAME  	|   	| ""  	|
+| TFPIN_CLUSTER_PASSWORD  	|   	| ""  	|
+| TFPIN_CLUSTER_REPLICA_MIN  	|   	| -1 (Pin on all cluster IPFS peers) 	|
+| TFPIN_CLUSTER_REPLICA_MAX  	|   	| -1 (Pin on all cluster IPFS peers) 	|
+| TFPIN_DB_DSN  	|   	| pins.db  	|
+| TFPIN_DB_LOG_LEVEL  	|   	| 1 (silent) 	|
+| TFPIN_SERVER_ADDR  	|   	| :8000  	|
+| TFPIN_SERVER_LOG_LEVEL  	|   	| 3 (warn) 	|
+| TFPIN_AUTH_HEADER_KEY  	|   	| Authorization  	|
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+<!-- Interacting With The Pinning Service -->
+## Interacting With The Pinning Service
 
+to interact with the pinning service you can use either:
+- IPFS Desktop or IPFS Web UI
+- IPFS CLI
+
+See Use pinning service [instructions](https://docs.ipfs.tech/how-to/work-with-pinning-services/#use-an-existing-pinning-service)
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- API SPECS -->
 ## API Specs
 
-see [here](./core/README.md)
+Threefold pinning service is compatible with the IPFS Pinning Service API (1.0.0) OpenAPI spec. 
+see [here](./pinning-api/README.md)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -146,7 +214,6 @@ see [here](./core/README.md)
 
 - [ ] simple ipfs pining service server compatible with this OpenAPI spec (https://github.com/ipfs/pinning-services-api-spec).  
 - [ ] registration using smart contract
-    - [ ] Authentication using unique token
 - [ ] payment
     
 
