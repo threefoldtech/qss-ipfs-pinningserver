@@ -163,10 +163,17 @@ Make sure to set correctly the required environment variables. see below usage s
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Set the required environment variables (see next section), then run the compiled binary
+1- set the required environment variables (see next section), then run the compiled binary
 
 ```sh
 TFPIN_CLUSTER_HOSTNAME="cluster-host-name" TFPIN_CLUSTER_USERNAME="usname" TFPIN_CLUSTER_PASSWORD="password" ./tfpin
+```
+
+2- You will need API token to interact with the service, for development run the script below to add a token of your choice (the development of the real sign-up flow blocked on the the chain part for now):
+
+```sh
+go run ./scripts/add_test_tokens.go BestTokenEver
+Token `BestTokenEver` stored successfully.
 ```
 
 ### Environment Variables
