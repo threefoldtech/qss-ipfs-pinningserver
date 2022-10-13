@@ -202,20 +202,23 @@ Token `BestTokenEver` stored successfully.
 ### Docker
 #### Building Image
 
+building binaries with version information and other metadata will improve the monitoring, logging, and debugging processes by adding identifying information to help track the builds over time.
+this why you should provide a value for the build arg `VERSION`.
 ```sh
-docker build -t abouelsaad/tfpinsvc .
+VERSION=$([ ! -z "$(git tag --points-at HEAD)" ] && git tag --points-at HEAD || git rev-parse --short HEAD) # use current tag, if none, use commit hash
+docker build --build-arg VERSION="$VERSION" -t abouelsaad/tfpinsvc .
 ```
 
 #### Running the container
 
 ```sh
-docker run --name tfpinsvc --env TFPIN_CLUSTER_HOSTNAME=HOSTNAME --env TFPIN_CLUSTER_PORT=9094 TFPIN_CLUSTER_USERNAME=USERNAME --env TFPIN_CLUSTER_PASSWORD=PASSWORD --env TFPIN_SERVER_ADDR=:80 -p 8000:80 abouelsaad:tfpin
+docker run -d --name tf-pin-svc --env TFPIN_CLUSTER_HOSTNAME="HOSTNAME" --env TFPIN_CLUSTER_PORT="9094" --env TFPIN_CLUSTER_USERNAME="USERNAME" --env TFPIN_CLUSTER_PASSWORD="PASSWORD" --env TFPIN_SERVER_ADDR=":80" -p 8000:80 abouelsaad/tfpinsvc
 ```
 
 Adding test token
 
 ```sh
-docker exec tfpinsvc ./add_test_tokens BestTokenEver
+docker exec tf-pin-svc ./add_test_tokens BestTokenEver
 ```
 ### Docker Compose
 

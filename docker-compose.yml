@@ -123,7 +123,7 @@ services:
 ##################################################################################
 
   tfpinsvc:
-    container_name: tfpinsvc
+    container_name: tf-pin-svc
     image: abouelsaad/tfpinsvc
     build: .
   

@@ -1,5 +1,6 @@
 # Get version from git hash
-git_hash := $(shell git rev-parse --short HEAD || echo 'development')
+current_tag := $(shell git tag --points-at HEAD)
+git_hash := $(shell git tag --points-at HEAD && [ ! -z ${current_tag} ] || git rev-parse --short HEAD || echo 'UNKNOWN')
 
 # Get current date
 current_time = $(shell date +"%Y-%m-%d:T%H:%M:%S")
