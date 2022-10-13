@@ -76,6 +76,10 @@
         <li><a href="#docker-compose">Docker Compose</a></li>
     </ul>
     <li><a href="#interacting-with-the-pinning-service">Interacting With The Pinning Service</a></li>
+    <ul>
+        <li><a href="#using-the-http-api">Using the HTTP API</a></li>
+        <li><a href="#using-the-ipfs-cli">Using the IPFS CLI</a></li>
+    </ul>
     <li><a href="#api-specs">API Specs</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -230,13 +234,76 @@ docker exec tfpinsvc ./add_test_tokens BestTokenEver
 <!-- Interacting With The Pinning Service -->
 ## Interacting With The Pinning Service
 
-to interact with the pinning service you can use either:
+To interact with the pinning service you can use any of:
 - IPFS Desktop or IPFS Web UI [installation instructions](https://github.com/ipfs/ipfs-desktop#install)
 - IPFS CLI [installation instructions](https://docs.ipfs.tech/install/command-line/)
+- Any http client, like `curl`
 
 See Use pinning service [instructions](https://docs.ipfs.tech/how-to/work-with-pinning-services/#use-an-existing-pinning-service)
 
+The threefold pinning service endpoint for all requests is
+https://[hostname]/api/v1/pins
+
+### Using the HTTP API
+#### Add a pin
+
+```sh
+curl -X POST 'https://[HOSTNAME]/api/v1/pins' \
+  --header 'Accept: */*' \
+  --header 'Authorization: Bearer <YOUR_AUTH_TOKEN>' \
+  --header 'Content-Type: application/json' \
+  -d '{
+  "cid": "<CID_TO_BE_PINNED>",
+  "name": "PreciousData.pdf"
+}'
+
+```
+
+#### List successful pins
+
+```sh
+curl -X GET 'https://[HOSTNAME]/api/v1/pins' \
+  --header 'Accept: */*' \
+  --header 'Authorization: Bearer <YOUR_AUTH_TOKEN>'
+```
+
+#### Delete a pin
+
+```sh
+curl -X DELETE 'https://[HOSTNAME]/api/v1/pins/<REQUEST_ID>' \
+  --header 'Accept: */*' \
+  --header 'Authorization: Bearer <YOUR_AUTH_TOKEN>'
+```
+
+### Using the IPFS CLI
+The IPFS CLI can be used to maintain pins by first adding the threefold pinning service.
+
+```sh
+ipfs pin remote service add tfpinsvc https://[HOSTNAME]/api/v1/ <YOUR_AUTH_TOKEN>
+```
+
+#### Add a pin
+
+```sh
+ipfs pin remote add --service=tfpinsvc --name=<PIN_NAME> <CID>
+```
+#### List successful pins
+
+```sh
+ipfs pin remote ls --service=tfpinsvc
+```
+#### Delete a pin
+
+```sh
+ipfs pin remote rm --service=tfpinsvc --cid=<CID>
+```
+
+### Using the IPFS Desktop GUI app
+
+see [here](https://docs.ipfs.tech/how-to/work-with-pinning-services/#ipfs-desktop-or-ipfs-web-ui)
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 <!-- API SPECS -->
 ## API Specs
