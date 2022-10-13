@@ -72,6 +72,8 @@
     <li><a href="#usage">Usage</a></li>
     <ul>
         <li><a href="#environment-variables">Environment Variables</a></li>
+        <li><a href="#docker">Docker</a></li>
+        <li><a href="#docker-compose">Docker Compose</a></li>
     </ul>
     <li><a href="#interacting-with-the-pinning-service">Interacting With The Pinning Service</a></li>
     <li><a href="#api-specs">API Specs</a></li>
@@ -192,6 +194,36 @@ Token `BestTokenEver` stored successfully.
 | TFPIN_SERVER_LOG_LEVEL  	|   	| 3 (warn) 	|
 | TFPIN_AUTH_HEADER_KEY  	|   	| Authorization  	|
 
+### Docker
+#### Building Image
+
+```sh
+docker build -t abouelsaad/tfpinsvc .
+```
+
+#### Running the container
+
+```sh
+docker run --name tfpinsvc --env TFPIN_CLUSTER_HOSTNAME=HOSTNAME --env TFPIN_CLUSTER_PORT=9094 TFPIN_CLUSTER_USERNAME=USERNAME --env TFPIN_CLUSTER_PASSWORD=PASSWORD --env TFPIN_SERVER_ADDR=:80 -p 8000:80 abouelsaad:tfpin
+```
+
+Adding test token
+
+```sh
+docker exec tfpinsvc ./add_test_tokens BestTokenEver
+```
+### Docker Compose
+
+For development and testing, with one command you can spin up
+- an IPFS cluster, and
+- Threefold pinning service
+
+which is already configured to communicate, so you just need to get/add a test token, and start interacting with the service.
+
+```sh
+docker compose up -d
+docker exec tfpinsvc ./add_test_tokens BestTokenEver
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -199,8 +231,8 @@ Token `BestTokenEver` stored successfully.
 ## Interacting With The Pinning Service
 
 to interact with the pinning service you can use either:
-- IPFS Desktop or IPFS Web UI
-- IPFS CLI
+- IPFS Desktop or IPFS Web UI [installation instructions](https://github.com/ipfs/ipfs-desktop#install)
+- IPFS CLI [installation instructions](https://docs.ipfs.tech/install/command-line/)
 
 See Use pinning service [instructions](https://docs.ipfs.tech/how-to/work-with-pinning-services/#use-an-existing-pinning-service)
 

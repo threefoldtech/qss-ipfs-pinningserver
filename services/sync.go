@@ -2,10 +2,10 @@ package services
 
 import (
 	"context"
-	"tf-ipfs-pinning-service/logger"
 	"time"
 
 	"github.com/threefoldtech/tf-pinning-service/database"
+	"github.com/threefoldtech/tf-pinning-service/logger"
 
 	ipfsController "github.com/threefoldtech/tf-pinning-service/ipfs-controller"
 )
