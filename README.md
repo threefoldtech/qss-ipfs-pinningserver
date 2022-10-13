@@ -79,6 +79,7 @@
     <ul>
         <li><a href="#using-the-http-api">Using the HTTP API</a></li>
         <li><a href="#using-the-ipfs-cli">Using the IPFS CLI</a></li>
+        <li><a href="#using-the-ipfs-desktop-gui-app">Using the IPFS Desktop GUI app</a></li>
     </ul>
     <li><a href="#api-specs">API Specs</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
