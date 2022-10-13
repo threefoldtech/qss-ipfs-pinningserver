@@ -9,6 +9,7 @@ require (
 	github.com/ipfs-cluster/ipfs-cluster v1.0.3
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/moby/locker v1.0.1
+	github.com/morikuni/aec v1.0.0
 	github.com/sirupsen/logrus v1.8.1
 	gorm.io/driver/sqlite v1.3.6
 	gorm.io/gorm v1.23.8

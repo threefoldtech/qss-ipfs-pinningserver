@@ -7,11 +7,15 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/morikuni/aec"
 	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/database"
 	"github.com/threefoldtech/tf-pinning-service/logger"
@@ -19,7 +23,39 @@ import (
 	"github.com/threefoldtech/tf-pinning-service/services"
 )
 
+var (
+	buildTime string
+	version   string
+)
+
+const tfpinFigletStr = `
+_________ _______  _______ _________ _       
+\__   __/(  ____ \(  ____ )\__   __/( (    /|
+   ) (   | (    \/| (    )|   ) (   |  \  ( |
+   | |   | (__    | (____)|   | |   |   \ | |
+   | |   |  __)   |  _____)   | |   | (\ \) |
+   | |   | (      | (         | |   | | \   |
+   | |   | )      | )      ___) (___| )  \  |
+   )_(   |/       |/       \_______/|/    )_)
+                                             
+`
+
+func printASCIIArt() {
+	tfpinLogo := aec.LightGreenF.Apply(tfpinFigletStr)
+	fmt.Println(tfpinLogo)
+}
+
 func main() {
+	displayVersion := flag.Bool("version", false, "Display version and exit")
+
+	flag.Parse()
+
+	if *displayVersion {
+		printASCIIArt()
+		fmt.Printf("Version:\t%s\n", version)
+		fmt.Printf("Build time:\t%s\n", buildTime)
+		os.Exit(0)
+	}
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

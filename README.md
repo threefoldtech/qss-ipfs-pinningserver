@@ -53,7 +53,7 @@
 
 
 <!-- TABLE OF CONTENTS -->
-<details>
+<details open>
   <summary>Table of Contents</summary>
   <ol>
     <li>
@@ -149,7 +149,7 @@ To compile tfpin binary from the source code, follow below instructions
   make build
   ```
 
-  Then find the compiled binary file `tfpin` in the repo root directory.
+  Then find the compiled binary file in `./bin` for current os and `./bin/linux_amd64` for linux os.
 
 Other make scripts available.
 
