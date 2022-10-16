@@ -59,7 +59,7 @@ func (u *users) FindByToken(ctx context.Context, access_token string) (User, err
 	return user, nil
 }
 func (u *users) Delete(ctx context.Context, id string) error {
-	tx := u.db.Where("id = ?", id).Delete(&PinDTO{})
+	tx := u.db.Where("id = ?", id).Delete(&User{})
 	if tx.Error != nil {
 		return tx.Error
 	}
