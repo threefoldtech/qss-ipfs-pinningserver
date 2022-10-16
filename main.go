@@ -59,13 +59,19 @@ func main() {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	config.LoadConfig()
+	err := config.LoadConfig()
+	if err != nil {
+		panic("Can't load the service config. caused by\n Error: " + err.Error())
+	}
 	log := logger.GetDefaultLogger()
 	loggerContext := log.WithFields(logger.Fields{
 		"topic": "Server",
 	})
 	loggerContext.Info("Config loaded, Server starting..")
-	database.ConnectDatabase()
+	err = database.ConnectDatabase()
+	if err != nil {
+		panic("Failed to connect to database. caused by\n Error: " + err.Error())
+	}
 	services.SetSyncService(10) // for now run every 10 minutes
 	services.StartInBackground()
 	router := sw.NewRouter()

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"strconv"
 )
@@ -37,7 +38,7 @@ type Config struct {
 	Db      dbConfig
 }
 
-func LoadConfig() {
+func LoadConfig() error {
 	cluster_host, ok := os.LookupEnv("TFPIN_CLUSTER_HOSTNAME")
 	if !ok {
 		cluster_host = "127.0.0.1"
@@ -46,9 +47,9 @@ func LoadConfig() {
 	if !ok {
 		cluster_port = "9097"
 	}
-	cluster_username, ok := os.LookupEnv("TFPIN_CLUSTER_USERNAME")
+	cluster_username := os.Getenv("TFPIN_CLUSTER_USERNAME")
 
-	cluster_password, ok := os.LookupEnv("TFPIN_CLUSTER_PASSWORD")
+	cluster_password := os.Getenv("TFPIN_CLUSTER_PASSWORD")
 
 	cluster_replication_min, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MIN")
 	var cluster_replica_min_int int
@@ -57,7 +58,7 @@ func LoadConfig() {
 	} else {
 		cluster_replica_min_int, err := strconv.Atoi(cluster_replication_min)
 		if err != nil || cluster_replica_min_int < 1 {
-			panic("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value!")
+			return errors.New("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value")
 		}
 	}
 
@@ -68,7 +69,7 @@ func LoadConfig() {
 	} else {
 		cluster_replica_max_int, err := strconv.Atoi(cluster_replication_max)
 		if err != nil || cluster_replica_max_int < cluster_replica_min_int {
-			panic("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value!")
+			return errors.New("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value")
 		}
 	}
 
@@ -103,7 +104,7 @@ func LoadConfig() {
 	}
 	database_ll_int, err := strconv.Atoi(database_log_level)
 	if err != nil || database_ll_int < 1 || database_ll_int > 4 {
-		panic("`TFPIN_DB_LOG_LEVEL` set to invalid value!")
+		return errors.New("`TFPIN_DB_LOG_LEVEL` set to invalid value")
 	}
 	dbc := dbConfig{
 		DSN:      database_dsn,
@@ -111,7 +112,7 @@ func LoadConfig() {
 	}
 	server_ll_int, err := strconv.Atoi(server_log_level)
 	if err != nil || server_ll_int < 0 || server_ll_int > 6 {
-		panic("`TFPIN_SERVER_LOG_LEVEL` set to invalid value!")
+		return errors.New("`TFPIN_SERVER_LOG_LEVEL` set to invalid value")
 	}
 	sc := serverConfig{
 		Addr:     server_addr,
@@ -126,4 +127,5 @@ func LoadConfig() {
 		Server:  sc,
 		Auth:    ac,
 	}
+	return nil
 }
