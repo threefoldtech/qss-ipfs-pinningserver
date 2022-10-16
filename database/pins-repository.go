@@ -71,7 +71,7 @@ func (r *pins) Find(
 ) (models.PinResults, error) {
 	var pins []PinDTO
 
-	queryDB := r.db
+	queryDB := r.db.Model(PinDTO{})
 	if len(cids) != 0 {
 		queryDB = queryDB.Where("cid IN ?", cids)
 	}
@@ -92,9 +92,9 @@ func (r *pins) Find(
 		queryDB = queryDB.Where("created_at > ?", after)
 	}
 
-	queryDB = queryDB.Limit(limit)
-	tx := queryDB.Find(&pins)
-	count := tx.RowsAffected
+	var count int64
+	queryDB.Count(&count)
+	tx := queryDB.Limit(limit).Find(&pins)
 	if tx.Error != nil {
 		return models.PinResults{}, tx.Error
 	}
