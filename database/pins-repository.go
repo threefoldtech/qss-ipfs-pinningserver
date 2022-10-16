@@ -94,7 +94,7 @@ func (r *pins) Find(
 
 	var count int64
 	queryDB.Count(&count)
-	tx := queryDB.Limit(limit).Find(&pins)
+	tx := queryDB.Limit(limit).Order("created_at desc").Find(&pins)
 	if tx.Error != nil {
 		return models.PinResults{}, tx.Error
 	}
