@@ -55,20 +55,25 @@ func AddPin(c *gin.Context) {
 	}
 
 	request_id := uuid.New().String()
-	delegates, err := cl.Delegates(c)
 	// log delegates error
 	pinStatus := models.PinStatus{
 		Pin:       pin,
 		Requestid: request_id,
 		Status:    models.QUEUED,
 		Created:   time.Now(),
-		Delegates: delegates,
 	}
 	pinStatus, err = pinsRepo.InsertOrGet(c, getUserIdFromContext(c), pinStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+	delegates, err := cl.Delegates(c)
+	if err != nil {
+		loggerContext.WithFields(logger.Fields{
+			"from_error": err.Error(),
+		}).Error("Can't get delegates. set to empty!")
+	}
+	pinStatus.Delegates = delegates
 	isNew := pinStatus.Requestid == request_id
 	loggerContext = loggerContext.WithFields(logger.Fields{
 		"request_id": pinStatus.Requestid,
@@ -304,20 +309,24 @@ func ReplacePinByRequestId(c *gin.Context) {
 	}
 
 	request_id := uuid.New().String()
-	delegates, err := cl.Delegates(c)
-	// log delegates error
 	pinStatus := models.PinStatus{
 		Pin:       pin,
 		Requestid: request_id,
 		Status:    models.QUEUED,
 		Created:   time.Now(),
-		Delegates: delegates,
 	}
 	pinStatus, err = pinsRepo.InsertOrGet(c, getUserIdFromContext(c), pinStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
 	}
+	delegates, err := cl.Delegates(c)
+	if err != nil {
+		loggerContext.WithFields(logger.Fields{
+			"from_error": err.Error(),
+		}).Error("Can't get delegates. set to empty!")
+	}
+	pinStatus.Delegates = delegates
 	isNew := pinStatus.Requestid == request_id
 	loggerContext = loggerContext.WithFields(logger.Fields{
 		"request_id": pinStatus.Requestid,
