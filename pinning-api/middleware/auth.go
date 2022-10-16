@@ -22,6 +22,12 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		apiKey, err := bearerToken(c.Request, apiKeyHeader)
 		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, models.Failure{
+				Error: models.FailureError{
+					Reason:  "UNAUTHORIZED",
+					Details: "Access token is missing or invalid",
+				},
+			})
 			logContext.Warn("API key authentication failed", "error", err)
 			return
 		}
