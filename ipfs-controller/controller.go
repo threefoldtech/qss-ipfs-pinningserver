@@ -28,6 +28,7 @@ func GetClusterController() (ipfsController, error) {
 		Port:     config.CFG.Cluster.Port,
 		Username: config.CFG.Cluster.Username,
 		Password: config.CFG.Cluster.Password,
+		Timeout:  time.Duration(config.CFG.Cluster.IpfsClusterTimeout) * time.Second,
 	})
 
 	if err != nil {

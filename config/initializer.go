@@ -19,6 +19,7 @@ type clusterConfig struct {
 	Password             string
 	ReplicationFactorMin int
 	ReplicationFactorMax int
+	IpfsClusterTimeout   int
 }
 
 type serverConfig struct {
@@ -50,7 +51,16 @@ func LoadConfig() error {
 	cluster_username := os.Getenv("TFPIN_CLUSTER_USERNAME")
 
 	cluster_password := os.Getenv("TFPIN_CLUSTER_PASSWORD")
-
+	cluster_timeout, ok := os.LookupEnv("TFPIN_CLUSTER_TIMEOUT")
+	var cluster_timeout_int int
+	if !ok {
+		cluster_timeout_int = 5
+	} else {
+		cluster_timeout_int, err := strconv.Atoi(cluster_timeout)
+		if err != nil || cluster_timeout_int < 5 {
+			return errors.New("`TFPIN_CLUSTER_TIMEOUT` set to invalid value")
+		}
+	}
 	cluster_replication_min, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MIN")
 	var cluster_replica_min_int int
 	if !ok {
@@ -101,6 +111,7 @@ func LoadConfig() error {
 		Password:             cluster_password,
 		ReplicationFactorMin: cluster_replica_min_int,
 		ReplicationFactorMax: cluster_replica_max_int,
+		IpfsClusterTimeout:   cluster_timeout_int,
 	}
 	database_ll_int, err := strconv.Atoi(database_log_level)
 	if err != nil || database_ll_int < 1 || database_ll_int > 4 {
