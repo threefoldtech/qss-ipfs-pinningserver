@@ -54,7 +54,7 @@ func LoadConfig() error {
 	cluster_timeout, ok := os.LookupEnv("TFPIN_CLUSTER_TIMEOUT")
 	var cluster_timeout_int int
 	if !ok {
-		cluster_timeout_int = 5
+		cluster_timeout_int = 10
 	} else {
 		cluster_timeout_int, err := strconv.Atoi(cluster_timeout)
 		if err != nil || cluster_timeout_int < 5 {
