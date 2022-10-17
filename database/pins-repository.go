@@ -98,7 +98,7 @@ func (r *pins) Find(
 	if tx.Error != nil {
 		return models.PinResults{}, tx.Error
 	}
-	var filterd_pins []models.PinStatus
+	filterd_pins := []models.PinStatus{}
 	for _, pin := range pins {
 		pin_status := pin.ToEntity()
 		filterd_pins = append(filterd_pins, pin_status)
