@@ -50,17 +50,17 @@ func SetSyncService(interval int) {
 					"new status": "pinned",
 				}).Info("Status updated")
 			} else {
-				elapsed := time.Now().Sub(pin.CreatedAt)
+				elapsed := time.Since(time.Unix(int64(pin.CreatedAt), 0))
 				if elapsed.Hours() > 24*7 {
 					innerContext.WithFields(logger.Fields{
 						"new status": "",
 					}).Warn("CID stuck for a week+")
 					// too many retry attempts can generate a lot of extra requests and extra load on the system.
-					// Should we delete the request on behalf of the user
+					// Should we delete the request on behalf of the user?
 				}
 			}
 			done <- pinned
 		}
-		loggerContext.Info("Sync service finished. took ", time.Now().Sub(strated_time))
+		loggerContext.Info("Sync service finished. took ", time.Since(strated_time))
 	})
 }

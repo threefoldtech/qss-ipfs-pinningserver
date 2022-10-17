@@ -85,11 +85,11 @@ func (r *pins) Find(
 		queryDB = queryDB.Where("user_id = ?", user_id)
 	}
 	if !before.IsZero() {
-		queryDB = queryDB.Where("created_at < ?", before)
+		queryDB = queryDB.Where("created_at < ?", before.Unix())
 	}
 
 	if !after.IsZero() {
-		queryDB = queryDB.Where("created_at > ?", after)
+		queryDB = queryDB.Where("created_at > ?", after.Unix())
 	}
 
 	var count int64
