@@ -82,6 +82,7 @@
         <li><a href="#using-the-ipfs-desktop-gui-app">Using the IPFS Desktop GUI app</a></li>
     </ul>
     <li><a href="#api-specs">API Specs</a></li>
+    <li><a href="#compliance-test-suite">COMPLIANCE TEST SUITE</a></li>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
     <li><a href="#license">License</a></li>
@@ -318,6 +319,13 @@ see [here](./pinning-api/README.md)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
+<!-- COMPLIANCE TEST SUITE  -->
+## COMPLIANCE TEST SUITE
+This tool should be used as compliance test suite for IPFS Pinning Service API Spec.
+https://github.com/ipfs-shipyard/pinning-service-compliance
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 <!-- ROADMAP -->
 ## Roadmap
@@ -325,7 +333,7 @@ see [here](./pinning-api/README.md)
 - [ ] simple ipfs pining service server compatible with this OpenAPI spec (https://github.com/ipfs/pinning-services-api-spec).  
 - [ ] registration using smart contract
 - [ ] payment
-    
+- [ ] Use QSFS as blocks storage layer
 
 See the [open issues](https://github.com/threefoldtech/tf-pinning-service/issues) for a full list of proposed features (and known issues).
 
