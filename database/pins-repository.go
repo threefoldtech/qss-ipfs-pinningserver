@@ -76,7 +76,20 @@ func (r *pins) Find(
 		queryDB = queryDB.Where("cid IN ?", cids)
 	}
 	if name != "" {
-		queryDB = queryDB.Where("name = ?", name)
+		if name != "" {
+			switch match {
+			case string(models.IEXACT):
+				queryDB = queryDB.Where("name LIKE ?", name)
+			case string(models.PARTIAL):
+				fallthrough
+			case string(models.IPARTIAL):
+				name = fmt.Sprintf("%%%s%%", name)
+				queryDB = queryDB.Where("name LIKE ?", name)
+			// case string(models.EXACT):
+			default:
+				queryDB = queryDB.Where("name = ?", name)
+			}
+		}
 	}
 	if len(statuses) != 0 {
 		queryDB = queryDB.Where("status IN ?", statuses)
