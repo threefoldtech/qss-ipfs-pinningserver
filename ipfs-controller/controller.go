@@ -70,17 +70,22 @@ func (c *clusterController) Add(ctx context.Context, pin models.Pin) error {
 		}
 		origins = append(origins, m)
 	}
-	_, err = c.Client.Pin(ctx, id,
-		api.PinOptions{
-			ReplicationFactorMin: c.ReplicationFactorMin,
-			ReplicationFactorMax: c.ReplicationFactorMax,
-			Name:                 pin.Name,
-			Mode:                 c.PinMode,
-			ShardSize:            api.DefaultShardSize,
-			Metadata:             pin.Meta,
-			Origins:              origins,
-		},
-	)
+	for i := 0; i < 3; i++ {
+		_, err = c.Client.Pin(ctx, id,
+			api.PinOptions{
+				ReplicationFactorMin: c.ReplicationFactorMin,
+				ReplicationFactorMax: c.ReplicationFactorMax,
+				Name:                 pin.Name,
+				Mode:                 c.PinMode,
+				ShardSize:            api.DefaultShardSize,
+				Metadata:             pin.Meta,
+				Origins:              origins,
+			},
+		)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return &ControllerError{
 			Type: PIN_ERROR,
@@ -99,7 +104,12 @@ func (c *clusterController) Remove(ctx context.Context, cid string) error {
 			Err:  err,
 		}
 	}
-	_, err = c.Client.Unpin(ctx, id)
+	for i := 0; i < 3; i++ {
+		_, err = c.Client.Unpin(ctx, id)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		return &ControllerError{
 			Type: UNPIN_ERROR,
