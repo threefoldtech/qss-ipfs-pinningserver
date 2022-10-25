@@ -2,11 +2,15 @@ package ipfsController
 
 import (
 	"context"
+	"errors"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/ipfs-cluster/ipfs-cluster/api"
 	"github.com/ipfs-cluster/ipfs-cluster/api/rest/client"
 	shell "github.com/ipfs/go-ipfs-api"
+	ma "github.com/multiformats/go-multiaddr"
 	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
@@ -110,10 +114,11 @@ func (c *clusterController) Delegates(ctx context.Context) ([]string, error) {
 		return []string{}, err
 	}
 	delegates := []string{}
-	// TODO: All multiaddrs MUST end with `/p2p/{peerID}` and SHOULD be fully resolved and confirmed to be disable from the public internet. Avoid sending addresses from local networks.
 	for _, addr := range clientId.IPFS.Addresses {
-		delegates = append(delegates, addr.String())
-
+		v, err := ParseIPFromMultiaddr(addr.Multiaddr)
+		if err == nil && !v.IsLoopback() {
+			delegates = append(delegates, addr.String())
+		}
 	}
 	return delegates, nil
 }
@@ -196,4 +201,21 @@ func (c *clusterController) DagSize(ctx context.Context, cid string) (*shell.Obj
 		}
 	}
 	return r, nil
+}
+
+func ParseIPFromMultiaddr(addr ma.Multiaddr) (net.IP, error) {
+	ErrInvalidMultiaddrFormat := errors.New("invalid multiaddr format")
+	s := addr.String()
+	parts := strings.Split(s, "/")
+	if parts[0] != "" {
+		return nil, ErrInvalidMultiaddrFormat
+	}
+	if len(parts) < 3 {
+		return nil, ErrInvalidMultiaddrFormat
+	}
+	isip := parts[1] == "ip4" || parts[1] == "ip6"
+	if !isip {
+		return nil, ErrInvalidMultiaddrFormat
+	}
+	return net.ParseIP(parts[2]), nil
 }
