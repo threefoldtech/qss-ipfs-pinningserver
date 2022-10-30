@@ -231,7 +231,7 @@ which is already configured to communicate, so you just need to get/add a test t
 
 ```sh
 docker compose up -d
-docker exec tfpinsvc ./add_test_tokens BestTokenEver
+docker exec tf-pin-svc ./add_test_tokens BestTokenEver
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
