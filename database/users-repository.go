@@ -65,3 +65,21 @@ func (u *users) Delete(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (u *users) PinsCountByID(ctx context.Context, id string) int64 {
+	// var pins []PinDTO
+	return u.db.Model(&User{}).Where("id = ?", id).Association("pindtos").Count()
+}
+
+func (u *users) PinsSizeByID(ctx context.Context, id string) (int, error) {
+	var pins []PinDTO
+	err := u.db.Model(&User{}).Where("id = ?", id).Association("pindtos").Find(&pins)
+	if err != nil {
+		return 0, err
+	}
+	var totalSize int
+	for _, pin := range pins {
+		totalSize = totalSize + pin.DagSize
+	}
+	return totalSize, nil
+}
