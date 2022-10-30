@@ -124,7 +124,7 @@ services:
 
   tfpinsvc:
     container_name: tf-pin-svc
-    image: abouelsaad/tfpinsvc
+    image: abouelsaad/tfpinsvc:latest
     build: .
   
     depends_on:
