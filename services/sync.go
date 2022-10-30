@@ -4,24 +4,24 @@ import (
 	"context"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/database"
 	"github.com/threefoldtech/tf-pinning-service/logger"
 
 	ipfsController "github.com/threefoldtech/tf-pinning-service/ipfs-controller"
 )
 
-func SetSyncService(interval int) {
+func SetSyncService(interval int, log *logrus.Logger, pinsRepo database.PinsRepository, ipfsClusterConfig config.ClusterConfig) {
 	ctx := context.Background()
 	s := GetScheduler()
-	log := logger.GetDefaultLogger()
 	s.Every(interval).Minutes().Do(func() {
 		loggerContext := log.WithFields(logger.Fields{
 			"topic": "Service-Sync",
 		})
 		loggerContext.Info("Sync service started")
 		strated_time := time.Now()
-		pinsRepo := database.GetPinsRepository()
-		cl, err := ipfsController.GetClusterController()
+		cl, err := ipfsController.GetClusterController(ipfsClusterConfig)
 		if err != nil {
 			loggerContext.WithFields(logger.Fields{
 				"from_error": err.Error(),

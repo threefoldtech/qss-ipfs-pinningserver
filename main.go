@@ -7,11 +7,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -45,6 +47,112 @@ func printASCIIArt() {
 	fmt.Println(tfpinLogo)
 }
 
+func LoadConfigFromEnv() (config.Config, error) {
+	var cfg config.Config
+	cluster_host, ok := os.LookupEnv("TFPIN_CLUSTER_HOSTNAME")
+	if !ok {
+		cluster_host = "127.0.0.1"
+	}
+	cluster_port, ok := os.LookupEnv("TFPIN_CLUSTER_PORT")
+	if !ok {
+		cluster_port = "9097"
+	}
+	cluster_username := os.Getenv("TFPIN_CLUSTER_USERNAME")
+
+	cluster_password := os.Getenv("TFPIN_CLUSTER_PASSWORD")
+	cluster_timeout, ok := os.LookupEnv("TFPIN_CLUSTER_TIMEOUT")
+	var cluster_timeout_int int
+	if !ok {
+		cluster_timeout_int = 10
+	} else {
+		cluster_timeout_int, err := strconv.Atoi(cluster_timeout)
+		if err != nil || cluster_timeout_int < 5 {
+			return cfg, errors.New("`TFPIN_CLUSTER_TIMEOUT` set to invalid value")
+		}
+	}
+	cluster_replication_min, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MIN")
+	var cluster_replica_min_int int
+	if !ok {
+		cluster_replica_min_int = -1
+	} else {
+		cluster_replica_min_int, err := strconv.Atoi(cluster_replication_min)
+		if err != nil || cluster_replica_min_int < 1 {
+			return cfg, errors.New("`TFPIN_CLUSTER_REPLICA_MIN` set to invalid value")
+		}
+	}
+
+	cluster_replication_max, ok := os.LookupEnv("TFPIN_CLUSTER_REPLICA_MAX")
+	var cluster_replica_max_int int
+	if !ok {
+		cluster_replica_max_int = -1
+	} else {
+		cluster_replica_max_int, err := strconv.Atoi(cluster_replication_max)
+		if err != nil || cluster_replica_max_int < cluster_replica_min_int {
+			return cfg, errors.New("`TFPIN_CLUSTER_REPLICA_MAX` set to invalid value")
+		}
+	}
+
+	database_dsn, ok := os.LookupEnv("TFPIN_DB_DSN")
+	if !ok {
+		database_dsn = "pins.db"
+	}
+	database_log_level, ok := os.LookupEnv("TFPIN_DB_LOG_LEVEL")
+	if !ok {
+		database_log_level = "1"
+	}
+	server_addr, ok := os.LookupEnv("TFPIN_SERVER_ADDR")
+	if !ok {
+		server_addr = ":8000"
+	}
+	server_log_level, ok := os.LookupEnv("TFPIN_SERVER_LOG_LEVEL")
+	if !ok {
+		server_log_level = "3"
+	}
+	auth_header_key, ok := os.LookupEnv("TFPIN_AUTH_HEADER_KEY")
+	if !ok {
+		auth_header_key = "Authorization"
+	}
+
+	cc := config.ClusterConfig{
+		Host:                 cluster_host,
+		Port:                 cluster_port,
+		Username:             cluster_username,
+		Password:             cluster_password,
+		ReplicationFactorMin: cluster_replica_min_int,
+		ReplicationFactorMax: cluster_replica_max_int,
+		IpfsClusterTimeout:   cluster_timeout_int,
+	}
+	database_ll_int, err := strconv.Atoi(database_log_level)
+	if err != nil || database_ll_int < 1 || database_ll_int > 4 {
+		return cfg, errors.New("`TFPIN_DB_LOG_LEVEL` set to invalid value")
+	}
+	dbc := config.DbConfig{
+		DSN:      database_dsn,
+		LogLevel: database_ll_int,
+	}
+	server_ll_int, err := strconv.Atoi(server_log_level)
+	if err != nil || server_ll_int < 0 || server_ll_int > 6 {
+		return config.Config{}, errors.New("`TFPIN_SERVER_LOG_LEVEL` set to invalid value")
+	}
+	sc := config.ServerConfig{
+		Addr: server_addr,
+	}
+	ac := config.AuthConfig{
+		ApiKeyHeader: auth_header_key,
+	}
+	lc := config.LoggerConfig{
+		LogLevel: server_ll_int,
+	}
+	cfg = config.Config{
+		Cluster: cc,
+		Db:      dbc,
+		Server:  sc,
+		Auth:    ac,
+		Logger:  lc,
+	}
+	return cfg, nil
+}
+
 func main() {
 	displayVersion := flag.Bool("version", false, "Display version and exit")
 
@@ -59,25 +167,34 @@ func main() {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	err := config.LoadConfig()
+	cfg, err := LoadConfigFromEnv()
 	if err != nil {
 		panic("Can't load the service config. caused by\n Error: " + err.Error())
 	}
-	log := logger.GetDefaultLogger()
+	log := logger.GetDefaultLogger(cfg.Logger)
 	loggerContext := log.WithFields(logger.Fields{
 		"topic": "Server",
 	})
 	loggerContext.Info("Config loaded, Server starting..")
-	err = database.ConnectDatabase()
+	db, err := database.NewDatabase(cfg.Db)
 	if err != nil {
 		panic("Failed to connect to database. caused by\n Error: " + err.Error())
 	}
-	services.SetSyncService(10) // for now run every 10 minutes
+	pins_repo := database.GetPinsRepository(db)
+	users_repo := database.GetUsersRepository(db)
+	services.SetSyncService(10, log, pins_repo, config.CFG.Cluster) // for now run every 10 minutes
+	services.SetDagService(10, log, pins_repo, config.CFG.Cluster)  // for now run every 10 minutes
 	services.StartInBackground()
-	router := sw.NewRouter()
+	handlers := &sw.Handlers{
+		Log:       log,
+		PinsRepo:  pins_repo,
+		UsersRepo: users_repo,
+		Config:    cfg,
+	}
+	router := sw.NewRouter(handlers)
 	// log.Fatal(router.Run(config.CFG.Server.Addr))
 	srv := &http.Server{
-		Addr:    config.CFG.Server.Addr,
+		Addr:    cfg.Server.Addr,
 		Handler: router,
 	}
 

@@ -8,18 +8,13 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-var DB *gorm.DB
-
-func ConnectDatabase() error {
-	if DB == nil {
-		db, err := gorm.Open(sqlite.Open(config.CFG.Db.DSN), &gorm.Config{
-			Logger: logger.Default.LogMode(logger.LogLevel(config.CFG.Db.LogLevel)),
-		})
-		if err != nil {
-			return err
-		}
-		db.AutoMigrate(&User{}, &PinDTO{})
-		DB = db
+func NewDatabase(cfg config.DbConfig) (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open(cfg.DSN), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.LogLevel(cfg.LogLevel)),
+	})
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	db.AutoMigrate(&User{}, &PinDTO{})
+	return db, nil
 }

@@ -25,14 +25,14 @@ type clusterController struct {
 	PinMode              api.PinMode
 }
 
-func GetClusterController() (ipfsController, error) {
+func GetClusterController(cfg config.ClusterConfig) (IpfsController, error) {
 	// ProxyAddr, _ := multiaddr.NewMultiaddr("/ip4/127.0.0.1/tcp/5001")
 	client, err := client.NewDefaultClient(&client.Config{
-		Host:     config.CFG.Cluster.Host,
-		Port:     config.CFG.Cluster.Port,
-		Username: config.CFG.Cluster.Username,
-		Password: config.CFG.Cluster.Password,
-		Timeout:  time.Duration(config.CFG.Cluster.IpfsClusterTimeout) * time.Second,
+		Host:     cfg.Host,
+		Port:     cfg.Port,
+		Username: cfg.Username,
+		Password: cfg.Password,
+		Timeout:  time.Duration(cfg.IpfsClusterTimeout) * time.Second,
 	})
 
 	if err != nil {
@@ -43,8 +43,8 @@ func GetClusterController() (ipfsController, error) {
 	}
 	c := &clusterController{
 		Client:               client,
-		ReplicationFactorMin: config.CFG.Cluster.ReplicationFactorMin,
-		ReplicationFactorMax: config.CFG.Cluster.ReplicationFactorMax,
+		ReplicationFactorMin: cfg.ReplicationFactorMin,
+		ReplicationFactorMax: cfg.ReplicationFactorMax,
 		PinMode:              DefaultPinMode,
 	}
 

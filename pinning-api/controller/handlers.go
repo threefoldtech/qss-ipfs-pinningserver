@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 
-	"github.com/threefoldtech/tf-pinning-service/database"
+	"github.com/threefoldtech/tf-pinning-service/config"
 	db "github.com/threefoldtech/tf-pinning-service/database"
 	ipfsController "github.com/threefoldtech/tf-pinning-service/ipfs-controller"
 	"github.com/threefoldtech/tf-pinning-service/logger"
@@ -22,9 +23,16 @@ func getUserIdFromContext(ctx *gin.Context) uint {
 	return user_id
 }
 
+type Handlers struct {
+	Log       *logrus.Logger
+	PinsRepo  db.PinsRepository
+	UsersRepo db.UsersRepository
+	Config    config.Config
+}
+
 // AddPin - Add pin object
-func AddPin(c *gin.Context) {
-	log := logger.GetDefaultLogger()
+func (h *Handlers) AddPin(c *gin.Context) {
+	log := h.Log
 
 	var pin models.Pin
 
@@ -37,7 +45,7 @@ func AddPin(c *gin.Context) {
 		"user_id": getUserIdFromContext(c),
 		"cid":     pin.Cid,
 	})
-	pinsRepo := database.GetPinsRepository()
+	pinsRepo := h.PinsRepo
 
 	loggerContext.Debug("Trying to acquire the lock")
 	pinsRepo.LockByCID(pin.Cid)
@@ -48,7 +56,7 @@ func AddPin(c *gin.Context) {
 		loggerContext.Debug("Lock released")
 	}()
 
-	cl, err := ipfsController.GetClusterController()
+	cl, err := ipfsController.GetClusterController(h.Config.Cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 		return
@@ -142,15 +150,15 @@ func AddPin(c *gin.Context) {
 }
 
 // DeletePinByRequestId - Remove pin object
-func DeletePinByRequestId(c *gin.Context) {
-	log := logger.GetDefaultLogger()
+func (h *Handlers) DeletePinByRequestId(c *gin.Context) {
+	log := h.Log
 	req_id := c.Params.ByName("requestid")
 	_, err := uuid.Parse(req_id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, "Invalid `requestid` query parameter"))
 		return
 	}
-	pinsRepo := database.GetPinsRepository()
+	pinsRepo := h.PinsRepo
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
@@ -191,7 +199,7 @@ func DeletePinByRequestId(c *gin.Context) {
 
 	if count == 1 {
 		loggerContext.Debug("This cid no longer referenced by service records, and will be unpinned.")
-		cl, err := ipfsController.GetClusterController()
+		cl, err := ipfsController.GetClusterController(h.Config.Cluster)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 			return
@@ -207,7 +215,7 @@ func DeletePinByRequestId(c *gin.Context) {
 }
 
 // GetPinByRequestId - Get pin object
-func GetPinByRequestId(c *gin.Context) {
+func (h *Handlers) GetPinByRequestId(c *gin.Context) {
 	req_id := c.Params.ByName("requestid")
 	_, err := uuid.Parse(req_id)
 	if err != nil {
@@ -215,7 +223,7 @@ func GetPinByRequestId(c *gin.Context) {
 		return
 	}
 
-	pinsRepo := database.GetPinsRepository()
+	pinsRepo := h.PinsRepo
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
@@ -225,7 +233,7 @@ func GetPinByRequestId(c *gin.Context) {
 }
 
 // GetPins - List pin objects
-func GetPins(c *gin.Context) {
+func (h *Handlers) GetPins(c *gin.Context) {
 	limit := c.Query("limit")
 	status := c.Query("status")
 	name := c.Query("name")
@@ -260,20 +268,20 @@ func GetPins(c *gin.Context) {
 			return
 		}
 	}
-	pinsRepo := database.GetPinsRepository()
+	pinsRepo := h.PinsRepo
 	pin_results, err := pinsRepo.Find(c, getUserIdFromContext(c), cids, statuses, name, before_t, after_t, match, limit_int)
 	c.JSON(http.StatusOK, pin_results)
 }
 
 // ReplacePinByRequestId - Replace pin object
-func ReplacePinByRequestId(c *gin.Context) {
+func (h *Handlers) ReplacePinByRequestId(c *gin.Context) {
 	req_id := c.Params.ByName("requestid")
 	_, err := uuid.Parse(req_id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, "Invalid `requestid` query parameter"))
 		return
 	}
-	log := logger.GetDefaultLogger()
+	log := h.Log
 	var pin models.Pin
 
 	if err := c.ShouldBindJSON(&pin); err != nil {
@@ -286,7 +294,7 @@ func ReplacePinByRequestId(c *gin.Context) {
 		"old_request_id": req_id,
 		"cid":            pin.Cid,
 	})
-	pinsRepo := database.GetPinsRepository()
+	pinsRepo := h.PinsRepo
 	pin_status, err := pinsRepo.FindByID(c, getUserIdFromContext(c), req_id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, models.NewAPIError(http.StatusNotFound, "The specified resource was not found"))
@@ -302,9 +310,10 @@ func ReplacePinByRequestId(c *gin.Context) {
 	pinsRepo.LockByCID(pin.Cid)
 	loggerContext.Debug("Lock acquired")
 
-	cl, err := ipfsController.GetClusterController()
+	cl, err := ipfsController.GetClusterController(h.Config.Cluster)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		pinsRepo.UnlockByCID(pin.Cid)
 		return
 	}
 
@@ -318,6 +327,7 @@ func ReplacePinByRequestId(c *gin.Context) {
 	pinStatus, err = pinsRepo.InsertOrGet(c, getUserIdFromContext(c), pinStatus)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		pinsRepo.UnlockByCID(pin.Cid)
 		return
 	}
 	delegates, err := cl.Delegates(c)
@@ -335,6 +345,7 @@ func ReplacePinByRequestId(c *gin.Context) {
 	if err != nil {
 		ce, ok := err.(*ipfsController.ControllerError)
 		if ok {
+			defer pinsRepo.UnlockByCID(pin.Cid)
 			switch ce.Type {
 			case ipfsController.INVALID_CID, ipfsController.INVALID_ORIGINS:
 				c.JSON(http.StatusBadRequest, models.NewAPIError(http.StatusBadRequest, ce.Error()))
@@ -397,7 +408,7 @@ func ReplacePinByRequestId(c *gin.Context) {
 
 	if count == 1 {
 		loggerContext.Debug("This cid no longer referenced by service records, and will be unpinned.")
-		cl, err := ipfsController.GetClusterController()
+		cl, err := ipfsController.GetClusterController(h.Config.Cluster)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
 			return

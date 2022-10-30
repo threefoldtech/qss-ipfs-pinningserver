@@ -7,18 +7,18 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/threefoldtech/tf-pinning-service/config"
 	"github.com/threefoldtech/tf-pinning-service/database"
 	"github.com/threefoldtech/tf-pinning-service/logger"
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
-func ApiKeyMiddleware() gin.HandlerFunc {
-	log := logger.GetDefaultLogger()
+func ApiKeyMiddleware(cfg config.AuthConfig, log *logrus.Logger, users_repo database.UsersRepository) gin.HandlerFunc {
 	logContext := log.WithFields(logger.Fields{
 		"topic": "Middleware-ApiKey",
 	})
-	apiKeyHeader := config.CFG.Auth.ApiKeyHeader
+	apiKeyHeader := cfg.ApiKeyHeader
 	return func(c *gin.Context) {
 		apiKey, err := bearerToken(c.Request, apiKeyHeader)
 		if err != nil {
@@ -32,7 +32,7 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if user_id, ok := apiKeyIsValid(c, apiKey); !ok {
+		if user_id, ok := apiKeyIsValid(c, apiKey, users_repo); !ok {
 			hostIP, _, err := net.SplitHostPort(c.Request.RemoteAddr)
 			if err != nil {
 				logContext.Warn("Failed to parse remote address", "error", err)
@@ -54,10 +54,9 @@ func ApiKeyMiddleware() gin.HandlerFunc {
 }
 
 // apiKeyIsValid checks if the given API key is valid and returns the user id if it is.
-func apiKeyIsValid(c *gin.Context, rawKey string) (uint, bool) {
+func apiKeyIsValid(c *gin.Context, rawKey string, users database.UsersRepository) (uint, bool) {
 	// TODO: use tf-pinning-service/auth package. not implemented yet.
 	// hash := sha256.Sum256([]byte(rawKey))
-	users := database.NewUsersRepository()
 	user, err := users.FindByToken(c, rawKey)
 	if err != nil {
 		return 0, false

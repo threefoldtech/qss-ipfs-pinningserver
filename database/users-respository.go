@@ -13,9 +13,9 @@ type users struct {
 	db *gorm.DB
 }
 
-func NewUsersRepository() UsersRepository {
+func GetUsersRepository(db *gorm.DB) UsersRepository {
 	return &users{
-		db: DB,
+		db: db,
 	}
 }
 

@@ -20,9 +20,9 @@ type pins struct {
 
 var locks = locker.New()
 
-func GetPinsRepository() PinsRepository {
+func GetPinsRepository(db *gorm.DB) PinsRepository {
 	return &pins{
-		db:    DB,
+		db:    db,
 		locks: locks,
 	}
 }
