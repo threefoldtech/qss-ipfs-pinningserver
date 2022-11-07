@@ -29,8 +29,7 @@ type PinsRepository interface {
 	// Delete removes the Pin according to the given ID
 	Delete(ctx context.Context, userID uint, id string) error
 	CIDRefrenceCount(ctx context.Context, cid string) (int64, error)
-	FindByStatus(ctx context.Context, statuses []string) ([]PinDTO, error)
-	ProcessByStatus(ctx context.Context, statuses []string, c chan bool) (chan *PinDTO, error)
+	ProcessByStatus(ctx context.Context, statuses []string) (chan []PinDTO, error)
 	/*
 		 	Lock()
 			Unlock()

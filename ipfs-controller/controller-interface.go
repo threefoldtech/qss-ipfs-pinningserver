@@ -7,7 +7,7 @@ import (
 	"github.com/threefoldtech/tf-pinning-service/pinning-api/models"
 )
 
-type ipfsController interface {
+type IpfsController interface {
 	Add(ctx context.Context, pin models.Pin) error
 	Remove(ctx context.Context, cid string) error
 	Delegates(ctx context.Context) ([]string, error)
@@ -17,4 +17,5 @@ type ipfsController interface {
 	IsPinned(ctx context.Context, cid string) (bool, error)
 	Status(ctx context.Context, cid string) (models.Status, error)
 	// DagSize(ctx context.Context, key string) (*shell.ObjectStats, error)
+	StatusCids(ctx context.Context, cids []string) (map[string]models.Status, error)
 }

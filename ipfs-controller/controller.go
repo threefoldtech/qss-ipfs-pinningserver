@@ -189,6 +189,41 @@ func (c *clusterController) Status(ctx context.Context, cid string) (models.Stat
 	}
 }
 
+func (c *clusterController) StatusCids(ctx context.Context, cids []string) (map[string]models.Status, error) {
+	res := make(map[string]models.Status)
+	var cids_decoded []api.Cid
+	for _, cid := range cids {
+		cid_decoded, err := api.DecodeCid(cid)
+		if err != nil {
+			return res, &ControllerError{
+				Type: INVALID_CID,
+				Err:  err,
+			}
+		}
+		cids_decoded = append(cids_decoded, cid_decoded)
+	}
+	pinsInfo := make(chan api.GlobalPinInfo)
+	go c.Client.StatusCids(ctx, cids_decoded, false, pinsInfo)
+
+	done := make(chan struct{})
+	go func() {
+		for pinInfo := range pinsInfo {
+			if pinInfo.Match(api.TrackerStatusPinning) {
+				res[pinInfo.Cid.String()] = models.PINNING
+			} else if pinInfo.Match(api.TrackerStatusQueued) {
+				res[pinInfo.Cid.String()] = models.QUEUED
+			} else if pinInfo.Match(api.TrackerStatusPinned) {
+				res[pinInfo.Cid.String()] = models.PINNED
+			} else {
+				res[pinInfo.Cid.String()] = models.FAILED
+			}
+		}
+		done <- struct{}{}
+	}()
+	<-done
+	return res, nil
+}
+
 func (c *clusterController) IsPinned(ctx context.Context, cid string) (bool, error) {
 	status, err := c.Status(ctx, cid)
 	if err != nil {
