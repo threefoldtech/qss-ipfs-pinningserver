@@ -182,8 +182,8 @@ func main() {
 	}
 	pins_repo := database.GetPinsRepository(db)
 	users_repo := database.GetUsersRepository(db)
-	services.SetSyncService(10, log, pins_repo, config.CFG.Cluster) // for now run every 10 minutes
-	services.SetDagService(10, log, pins_repo, config.CFG.Cluster)  // for now run every 10 minutes
+	services.SetSyncService(1, log, pins_repo, cfg.Cluster) // for now run every 10 minutes
+	services.SetDagService(1, log, pins_repo, cfg.Cluster)  // for now run every 10 minutes
 	services.StartInBackground()
 	handlers := &sw.Handlers{
 		Log:       log,
