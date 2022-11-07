@@ -31,6 +31,9 @@ func SetDagService(interval int, log *logrus.Logger, pinsRepo database.PinsRepos
 		pins, _ := pinsRepo.ProcessByStatus(ctx, []string{"pinned"})
 		for patch := range pins {
 			for _, pin := range patch {
+				if pin.DagSize != 0 {
+					continue
+				}
 				innerContext := loggerContext.WithFields(logger.Fields{
 					"cid":        pin.Cid,
 					"status":     pin.Status,
@@ -52,7 +55,7 @@ func SetDagService(interval int, log *logrus.Logger, pinsRepo database.PinsRepos
 						continue
 					}
 					innerContext.WithFields(logger.Fields{
-						"dag size": pin.DagSize,
+						"dag size": stat.CumulativeSize,
 					}).Info("dag size updated")
 				}
 			}
