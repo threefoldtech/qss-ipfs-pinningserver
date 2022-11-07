@@ -20,6 +20,7 @@ const (
 type User struct {
 	gorm.Model
 	AccessToken string
+	PinDTOs     []PinDTO
 	// Email       string
 	// Account		string // polka account id ? if so should be unique filed
 }
@@ -33,6 +34,7 @@ type PinDTO struct {
 	Cid       string         // `gorm:"index:cidUserId,unique"`
 	Name      string
 	UserID    uint // `gorm:"index:cidUserId,unique"`
+	DagSize   int
 }
 
 func (p *PinDTO) ToEntity() models.PinStatus {

@@ -13,4 +13,6 @@ type UsersRepository interface {
 	FindByToken(ctx context.Context, token string) (User, error)
 	// Delete removes the Pin according to the given ID
 	Delete(ctx context.Context, id string) error
+	// Get Pins count
+	// Get Pins Size
 }
