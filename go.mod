@@ -10,6 +10,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.3.0
 	github.com/moby/locker v1.0.1
 	github.com/morikuni/aec v1.0.0
+	github.com/multiformats/go-multiaddr v0.6.0
 	github.com/sirupsen/logrus v1.8.1
 	gorm.io/driver/sqlite v1.3.6
 	gorm.io/gorm v1.23.8
@@ -90,7 +91,6 @@ require (
 	github.com/mr-tron/base58 v1.2.0 // indirect
 	github.com/multiformats/go-base32 v0.0.4 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
-	github.com/multiformats/go-multiaddr v0.6.0 // indirect
 	github.com/multiformats/go-multiaddr-dns v0.3.1 // indirect
 	github.com/multiformats/go-multiaddr-fmt v0.1.0 // indirect
 	github.com/multiformats/go-multibase v0.1.1 // indirect
