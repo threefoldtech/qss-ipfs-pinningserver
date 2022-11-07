@@ -421,3 +421,32 @@ func (h *Handlers) ReplacePinByRequestId(c *gin.Context) {
 	}
 	c.JSON(http.StatusAccepted, gin.H{})
 }
+
+func (h *Handlers) GetPeers(c *gin.Context) {
+	cl, err := ipfsController.GetClusterController(h.Config.Cluster)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	peersInfo, err := cl.Peers(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, peersInfo)
+
+}
+
+func (h *Handlers) GetAlerts(c *gin.Context) {
+	cl, err := ipfsController.GetClusterController(h.Config.Cluster)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	alerts, err := cl.Alerts(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, models.NewAPIError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+	c.JSON(http.StatusOK, alerts)
+}

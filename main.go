@@ -112,6 +112,14 @@ func LoadConfigFromEnv() (config.Config, error) {
 	if !ok {
 		auth_header_key = "Authorization"
 	}
+	auth_admin_username, ok := os.LookupEnv("TFPIN_AUTH_ADMIN_USERNAME")
+	if !ok {
+		return cfg, errors.New("`TFPIN_AUTH_ADMIN_USERNAME` need to be set")
+	}
+	auth_admin_password, ok := os.LookupEnv("TFPIN_AUTH_ADMIN_PASSWORD")
+	if !ok {
+		return cfg, errors.New("`TFPIN_AUTH_ADMIN_PASSWORD` need to be set")
+	}
 
 	cc := config.ClusterConfig{
 		Host:                 cluster_host,
@@ -138,7 +146,9 @@ func LoadConfigFromEnv() (config.Config, error) {
 		Addr: server_addr,
 	}
 	ac := config.AuthConfig{
-		ApiKeyHeader: auth_header_key,
+		ApiKeyHeader:  auth_header_key,
+		AdminUserName: auth_admin_username,
+		AdminPassword: auth_admin_password,
 	}
 	lc := config.LoggerConfig{
 		LogLevel: server_ll_int,

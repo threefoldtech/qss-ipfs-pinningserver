@@ -248,6 +248,39 @@ func (c *clusterController) DagSize(ctx context.Context, cid string) (*shell.Obj
 	return r, nil
 }
 
+func (c *clusterController) Alerts(ctx context.Context) ([]api.Alert, error) {
+	alerts, err := c.Client.Alerts(ctx)
+	if err != nil {
+		return nil, &ControllerError{
+			Type: CONNECTION_ERROR,
+			Err:  err,
+		}
+	}
+	return alerts, nil
+}
+
+func (c *clusterController) Peers(ctx context.Context) ([]api.ID, error) {
+	messages := make(chan api.ID, 1)
+	err := c.Client.Peers(ctx, messages)
+	if err != nil {
+		return nil, &ControllerError{
+			Type: CONNECTION_ERROR,
+			Err:  err,
+		}
+	}
+	var peers []api.ID
+	done := make(chan struct{})
+	go func() {
+		for elem := range messages {
+			peers = append(peers, elem)
+		}
+		done <- struct{}{}
+	}()
+
+	<-done
+	return peers, nil
+}
+
 func ParseIPFromMultiaddr(addr ma.Multiaddr) (net.IP, error) {
 	ErrInvalidMultiaddrFormat := errors.New("invalid multiaddr format")
 	s := addr.String()

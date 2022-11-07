@@ -19,4 +19,6 @@ type IpfsController interface {
 	Status(ctx context.Context, cid string) (models.Status, error)
 	DagSize(ctx context.Context, key string) (*shell.ObjectStats, error)
 	StatusCids(ctx context.Context, cids []string) (map[string]models.Status, error)
+	Alerts(ctx context.Context) ([]api.Alert, error)
+	Peers(ctx context.Context) ([]api.ID, error)
 }
