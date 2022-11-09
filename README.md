@@ -199,7 +199,8 @@ Token `BestTokenEver` stored successfully.
 | TFPIN_SERVER_ADDR  	|   	| :8000  	|
 | TFPIN_SERVER_LOG_LEVEL  	|   	| 3 (warn) 	|
 | TFPIN_AUTH_HEADER_KEY  	|   	| Authorization  	|
-
+| TFPIN_AUTH_ADMIN_USERNAME | | No default value |
+| TFPIN_AUTH_ADMIN_PASSWORD | | No default value |
 ### Docker
 #### Building Image
 
