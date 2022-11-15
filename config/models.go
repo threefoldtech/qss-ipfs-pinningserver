@@ -3,7 +3,9 @@ package config
 var CFG Config
 
 type AuthConfig struct {
-	ApiKeyHeader string // ex. "Authorization"
+	ApiKeyHeader  string // ex. "Authorization"
+	AdminUserName string
+	AdminPassword string
 }
 
 type ClusterConfig struct {

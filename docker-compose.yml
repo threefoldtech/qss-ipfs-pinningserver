@@ -139,6 +139,8 @@ services:
       TFPIN_SERVER_LOG_LEVEL: 6
       TFPIN_DB_LOG_LEVEL: 2
       TFPIN_DB_DSN: "/data/db/pins.db"
+      TFPIN_AUTH_ADMIN_USERNAME: "tfpin"
+      TFPIN_AUTH_ADMIN_PASSWORD: "tfpin"
 
     ports:
       - "8000:80"
